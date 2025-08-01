@@ -1,12 +1,19 @@
 # shared-media-streaming
+
 Shared Media Streaming Web App
+
 A web app where two people can share a piece of media together
 
+
 ## MVP validation goal:
+
 Can handle 10 users across the app.
+
 Shared media playback + basic interaction
 
+
 ### Features:
+
 - Storage upload
 - Database and metadata storage
 - Client media player
@@ -14,7 +21,9 @@ Shared media playback + basic interaction
 - Chat
 - Interface
 
-### Depenedencies
+
+### Dependencies
+
 Frontend: 
 - React + Redux Toolkit (for app-wide state), 
 - Zustand (for local/lightweight state), 
