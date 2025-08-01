@@ -14,7 +14,7 @@ Shared media playback + basic interaction
 - Chat
 - Interface
 
-### Requirements
+### Depenedencies
 Frontend: 
 - React + Redux Toolkit (for app-wide state), 
 - Zustand (for local/lightweight state), 
