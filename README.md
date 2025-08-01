@@ -5,7 +5,7 @@ A web app where two people can share a piece of media together
 Features:
 - Cloud storage upload
 - Database and metadata storage
-- Cliient media player
+- Client media player
 - Realtime media sync
 - Chat
 - Interface
