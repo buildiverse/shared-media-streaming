@@ -2,8 +2,12 @@
 Shared Media Streaming Web App
 A web app where two people can share a piece of media together
 
+MVP validation goal:
+Can handle 10 users across the app.
+Shared media playback + basic interaction
+
 Features:
-- Cloud storage upload
+- Storage upload
 - Database and metadata storage
 - Client media player
 - Realtime media sync
