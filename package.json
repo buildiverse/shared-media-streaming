@@ -1,0 +1,22 @@
+{
+  "name": "shared-media-streaming",
+  "version": "0.0.1",
+  "description": "A shared media streaming server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buildiverse/shared-media-streaming.git"
+  },
+  "author": "Buildiverse",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/buildiverse/shared-media-streaming/issues"
+  },
+  "homepage": "https://github.com/buildiverse/shared-media-streaming#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
