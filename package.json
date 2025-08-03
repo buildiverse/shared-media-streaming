@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "fmt": "npx prettier . --write",
+    "clean": "rm -rf node_modules",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
