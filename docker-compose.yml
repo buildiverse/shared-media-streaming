@@ -1,0 +1,23 @@
+services:
+  sms:
+    container_name: sms
+    image: ghcr.io/buildiverse/containers:sms-latest
+    ports:
+      - 3000:3000
+    env_file:
+      - ./envfiles/sms.env
+    depends_on:
+      - mongodb
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:8.0.12
+    ports:
+      - 27017:27017
+    env_file:
+      - ./envfiles/mongo.env
+    volumes:
+      - mongodb:/data/db
+
+volumes:
+  mongodb: {}
