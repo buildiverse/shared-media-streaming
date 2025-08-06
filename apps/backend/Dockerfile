@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM node:18-alpine AS builder
+FROM node:lts-alpine3.22 AS builder
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -21,7 +21,7 @@ COPY src/ ./src/
 RUN pnpm run build:prod
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:lts-alpine3.22 AS production
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
