@@ -1,10 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import AppError from '../utils/appError';
 import mongoose from 'mongoose';
+import { HTTP_STATUS } from '../constants/httpStatus';
 
 const handleCastErroDB = (err: mongoose.Error.CastError) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
-  return new AppError(message, 400);
+  return new AppError(message, HTTP_STATUS.BAD_REQUEST);
 };
 
 const handleDublicateFieldsDB = (err: any) => {
@@ -12,14 +13,14 @@ const handleDublicateFieldsDB = (err: any) => {
 
   const message = `The value '${value}' is already in use. Please choose a different value.`;
 
-  return new AppError(message, 400);
+  return new AppError(message, HTTP_STATUS.BAD_REQUEST);
 };
 
 const handleValidationErrorDB = (err: mongoose.Error.ValidationError) => {
   const errors = Object.values(err.errors).map((el) => el.message);
 
   const message = `${errors.join(', ')}.`;
-  return new AppError(message, 400);
+  return new AppError(message, HTTP_STATUS.BAD_REQUEST);
 };
 
 const sendErrorDev = (err: any, res: Response) => {
@@ -41,7 +42,7 @@ const sendErrorProd = (err: any, res: Response) => {
 
     // Programming or other unknown error
   } else {
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       status: 'fail',
       message: 'Something went wrong!',
     });
@@ -54,7 +55,7 @@ const globalErrorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  err.statusCode = err.statusCode || 500;
+  err.statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {

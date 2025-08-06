@@ -3,6 +3,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import mongoSanitize from 'express-mongo-sanitize';
 import globalErrorHandler from './middleware/errorHandler';
+import AppError from './utils/appError';
+import { HTTP_STATUS } from './constants/httpStatus';
 
 const app = express();
 
@@ -72,9 +74,14 @@ app.get('/check-mongo', async (_req, res) => {
           ...serverInfo,
         });
       } catch (dbError) {
-        res.status(503).json({
+        const error = new AppError(
+          'MongoDB connected but cannot access database',
+          HTTP_STATUS.SERVICE_UNAVAILABLE,
+        );
+
+        res.status(error.statusCode).json({
           success: false,
-          message: 'MongoDB connected but cannot access database',
+          message: error.message,
           connectionState: states[connectionState] || 'unknown',
           error:
             dbError instanceof Error
@@ -83,16 +90,21 @@ app.get('/check-mongo', async (_req, res) => {
         });
       }
     } else {
-      res.status(503).json({
+      const error = new AppError(
+        'MongoDB is not connected',
+        HTTP_STATUS.SERVICE_UNAVAILABLE,
+      );
+
+      res.status(error.statusCode).json({
         success: false,
-        message: 'MongoDB is not connected',
+        message: error.message,
         connectionState: states[connectionState] || 'unknown',
         mongoUri: process.env.MONGO_URI ? 'Set' : 'Not set',
       });
     }
   } catch (error) {
     console.error('MongoDB health check failed:', error);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'Failed to check MongoDB connection',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -152,7 +164,7 @@ app.get('/api/env', (_req, res) => {
 
 // 404 handler for undefined routes
 app.use('*', (_req, res) => {
-  res.status(404).json({
+  res.status(HTTP_STATUS.NOT_FOUND).json({
     success: false,
     message: 'API endpoint not found',
     availableEndpoints: [
