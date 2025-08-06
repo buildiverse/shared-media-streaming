@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
+import dotenv from "dotenv";
 
 import app from "./app";
 import { connectDB } from "./config/db";
