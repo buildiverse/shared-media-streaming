@@ -1,14 +1,40 @@
-# Turborepo starter
+# Shared Media Streaming
 
-This Turborepo starter is maintained by the Turborepo core team.
+A web app where two people can share a piece of media together
 
-## Using this example
+This project is built using Turborepo for efficient monorepo management.
 
-Run the following command:
+## MVP validation goal:
 
-```sh
-npx create-turbo@latest
-```
+Can handle 10 users across the app.
+
+Shared media playbook + basic interaction
+
+### Features:
+
+- Storage upload
+- Database and metadata storage
+- Client media player
+- Realtime media sync
+- Chat
+- Interface
+
+### Tech Stack
+
+**Frontend:**
+- React + Redux Toolkit (for app-wide state)
+- Zustand (for local/lightweight state)
+- TailwindCSS (for styling)
+
+**Backend:**
+- Node.js + Express.js for APIs
+- Socket.IO for real‑time media sync
+
+**Database:**
+- MongoDB (fast iteration for MVP). If relational features become essential, we can migrate or add PostgreSQL later.
+
+**Storage:**
+- S3
 
 ## What's inside?
 
@@ -16,11 +42,9 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `frontend`: React application for the client interface
+- `backend`: Node.js/Express.js server for APIs and real-time sync
+- `@repo/shared`: Shared types and utilities between frontend and backend
 
 Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 
@@ -29,98 +53,61 @@ Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
 This Turborepo has some additional tools already setup for you:
 
 - [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
+- [Biome](https://biomejs.dev/) for code linting and formatting
 - [Prettier](https://prettier.io) for code formatting
 
-### Build
+## Getting Started
 
-To build all apps and packages, run the following command:
+### Installation
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+# Install dependencies
+pnpm install
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
+### Development
 
 To develop all apps and packages, run the following command:
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+# Start all applications in development mode
+pnpm run dev
 ```
 
 You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+```bash
+# Start only the frontend
+pnpm run dev --filter=frontend
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# Start only the backend
+pnpm run dev --filter=backend
 ```
 
-### Remote Caching
+### Build
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+To build all apps and packages:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+pnpm run build
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+To build specific packages:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+```bash
+# Build backend
+pnpm run build:backend
 
+# Build shared package
+pnpm run build:shared
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+### Production
+
+To start the production server:
+
+```bash
+pnpm run start:prod
 ```
 
 ## Useful Links

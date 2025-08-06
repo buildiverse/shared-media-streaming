@@ -1,5 +1,7 @@
 {
   "name": "shared-media-streaming",
+  "version": "0.0.1",
+  "description": "A shared media streaming web app",
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development turbo run dev --parallel",
@@ -9,7 +11,25 @@
     "start:prod": "NODE_ENV=production node apps/backend/dist/index.js",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "fmt": "npx prettier . --write",
+    "check-types": "turbo run check-types",
+    "clean": "rm -rf node_modules",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buildiverse/shared-media-streaming.git"
+  },
+  "author": "Buildiverse",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/buildiverse/shared-media-streaming/issues"
+  },
+  "homepage": "https://github.com/buildiverse/shared-media-streaming#readme",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "express": "^5.1.0",
+    "mongodb": "^6.18.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.3",
