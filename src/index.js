@@ -24,7 +24,6 @@ app.get("/check-mongo", async (req, res) => {
     });
     await client.connect();
 
-    // Simple query to verify connection
     const adminDb = client.db().admin();
     const serverStatus = await adminDb.serverStatus();
 
@@ -49,7 +48,6 @@ app.get("/check-mongo", async (req, res) => {
   }
 });
 
-// New route to upload a test file to S3
 app.post("/upload-test-file", async (req, res) => {
   const bucketName = process.env.S3_BUCKET;
   const fileName = `test-file-${Date.now()}.txt`;
@@ -74,12 +72,12 @@ app.post("/upload-test-file", async (req, res) => {
     Bucket: bucketName,
     Key: fileName,
     Body: fileContent,
-    ContentType: "text/plain", // Specify the content type
-    ACL: "private", // Access Control List: private, public-read, etc.
+    ContentType: "text/plain",
+    ACL: "private",
   };
 
   try {
-    const data = await s3.upload(params).promise(); // Use .promise() for async/await
+    const data = await s3.upload(params).promise();
     res.json({
       success: true,
       message: "Test file uploaded successfully to S3!",
