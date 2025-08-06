@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/buildiverse/shared-media-streaming#readme",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "express": "^5.1.0",
     "mongodb": "^6.18.0"
   },

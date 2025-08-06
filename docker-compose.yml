@@ -1,7 +1,8 @@
 services:
   sms:
     container_name: sms
-    image: ghcr.io/buildiverse/containers:sms-latest
+    #image: ghcr.io/buildiverse/containers:sms-latest
+    build: .
     ports:
       - 3000:3000
     env_file:
