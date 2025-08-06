@@ -1,3 +1,9 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+jspm_packages/
+
 # Logs
 logs
 *.log
@@ -36,10 +42,8 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-
-# Dependency directories
-node_modules/
-jspm_packages/
+build
+dist
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
@@ -65,22 +69,26 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
+# Environment files
 .env
 .env.*
 !.env.example
+.env.local
+.env.development
+.env.test.local
+.env.production
 
-# parcel-bundler cache (https://parceljs.org/)
+# Parcel cache
 .cache
 .parcel-cache
 
 # Next.js build output
-.next
+.next/
+out/
 out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
@@ -93,7 +101,6 @@ dist
 
 # vuepress v2.x temp and cache directory
 .temp
-.cache
 
 # Sveltekit cache directory
 .svelte-kit/
@@ -137,3 +144,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Misc
+.DS_Store
+*.pem
