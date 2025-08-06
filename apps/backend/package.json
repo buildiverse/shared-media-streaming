@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
+    "dev:local": "NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "build:prod": "NODE_ENV=production tsc -p tsconfig.json",
+    "start": "NODE_ENV=production node dist/index.js",
+    "start:dev": "NODE_ENV=development node dist/index.js",
+    "prod": "pnpm run build:prod && pnpm run start",
+    "prod:pm2": "pnpm run build:prod && pm2 start ecosystem.config.js --env production",
+    "prod:docker": "docker build -t shared-media-streaming-backend . && docker run -p 3000:3000 --env-file .env.production shared-media-streaming-backend",
+    "clean": "rm -rf dist",
+    "prebuild": "pnpm run clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "aws-sdk": "^2.1692.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.19.2",
+    "mongoose": "^8.17.0",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.2.0",
+    "nodemon": "^3.1.10",
+    "pm2": "^5.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
