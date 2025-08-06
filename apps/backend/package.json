@@ -26,6 +26,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.19.2",
+    "express-mongo-sanitize": "^2.2.0",
     "mongoose": "^8.17.0",
     "multer": "^2.0.2"
   },
