@@ -1,8 +1,8 @@
 services:
   backend:
     build:
-      context: . #todo: fix path
-      dockerfile: Dockerfile
+      context: ../../ #repo root
+    dockerfile: Backend.dockerfile
       target: production
     container_name: shared-media-streaming-backend
     restart: unless-stopped
