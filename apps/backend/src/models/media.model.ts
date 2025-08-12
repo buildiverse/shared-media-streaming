@@ -1,4 +1,3 @@
-// backend/src/models/Media.js
 import mongoose from 'mongoose';
 
 const mediaSchema = new mongoose.Schema({
