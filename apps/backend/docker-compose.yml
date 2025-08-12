@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: .
+      context: . #todo: fix path
       dockerfile: Dockerfile
       target: production
     container_name: shared-media-streaming-backend
