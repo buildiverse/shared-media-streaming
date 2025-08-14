@@ -1,15 +1,15 @@
 services:
   backend:
     build:
-      context: ../../ #repo root
-    dockerfile: Backend.dockerfile
+      context: .
+      dockerfile: Backend.dockerfile
       target: production
     container_name: shared-media-streaming-backend
     restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
-      - .env.production
+      - ./envfiles/production.env
     environment:
       - NODE_ENV=production
     volumes:
