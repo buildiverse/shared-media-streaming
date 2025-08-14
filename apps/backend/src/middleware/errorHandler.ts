@@ -49,11 +49,12 @@ const sendErrorProd = (err: any, res: Response) => {
   }
 };
 
+//todo: req and next unused
 const globalErrorHandler = (
   err: any,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   err.statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   err.status = err.status || 'error';
