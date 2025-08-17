@@ -7,10 +7,10 @@ const roomSchema = new mongoose.Schema({
   playback: {
     state: { type: String, enum: ['playing', 'paused'], default: 'paused' },
     currentTime: { type: Number, default: 0 },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
   },
   createdAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date }
+  expiresAt: { type: Date },
 });
 
 export default mongoose.model('Room', roomSchema);

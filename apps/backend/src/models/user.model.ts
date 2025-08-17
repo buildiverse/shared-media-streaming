@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String },
   avatarUrl: { type: String },
   createdAt: { type: Date, default: Date.now },
-  lastActiveAt: { type: Date }
+  lastActiveAt: { type: Date },
 });
 
 export default mongoose.model('User', userSchema);

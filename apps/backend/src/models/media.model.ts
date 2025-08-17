@@ -7,7 +7,7 @@ const mediaSchema = new mongoose.Schema({
   size: { type: Number },
   duration: { type: Number },
   uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model('Media', mediaSchema);
