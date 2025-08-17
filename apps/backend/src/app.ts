@@ -5,6 +5,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import globalErrorHandler from './middleware/errorHandler';
 import AppError from './utils/appError';
 import { HTTP_STATUS } from './constants/httpStatus';
+import AWS from 'aws-sdk';
 
 const app = express();
 
@@ -174,6 +175,63 @@ app.use('*', (_req, res) => {
       'GET /api/env',
     ],
   });
+});
+
+app.post('/upload-test-file', async (_req, res) => {
+  const bucketName = process.env.S3_BUCKET;
+  const fileName = `test-file-${Date.now()}.txt`;
+  const fileContent = 'This is a test file uploaded from my Express app!';
+
+  AWS.config.update({
+    accessKeyId: process.env.S3_USER_KEY,
+    secretAccessKey: process.env.S3_SECRET,
+    region: process.env.S3_REGION,
+  });
+
+  const s3 = new AWS.S3();
+
+  if (!bucketName) {
+    return res.status(500).json({
+      success: false,
+      message: 'S3_BUCKET environment variable is not set.',
+    });
+  }
+
+  const params = {
+    Bucket: bucketName,
+    Key: fileName,
+    Body: fileContent,
+    ContentType: 'text/plain',
+    ACL: 'private',
+  };
+
+  try {
+    const data = await s3.upload(params).promise();
+    res.json({
+      success: true,
+      message: 'Test file uploaded successfully to S3!',
+      fileLocation: data.Location,
+      fileName: data.Key,
+      bucket: data.Bucket,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('S3 upload failed:', error.message);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload test file to S3.',
+        error: error.message,
+      });
+    } else {
+      // fallback for non-Error types
+      console.error('S3 upload failed with unknown error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload test file to S3.',
+        error: String(error),
+      });
+    }
+  }
 });
 
 // Global error handler
