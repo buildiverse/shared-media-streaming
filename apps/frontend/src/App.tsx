@@ -1,12 +1,30 @@
-function App() {
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Entry } from './routes/Entry.tsx';
+import { Error404 } from './routes/Error404.tsx';
+import { ApiStatus } from './routes/status/Api.tsx';
+import { MongoStatus } from './routes/status/Mongo.tsx';
+import { StatusEntry } from './routes/status/StatusEntry.tsx';
+
+export default function App() {
   return (
-    <div>
-      <h1 className="flex justify-center items-center h-[100vh] text-4xl">
-        Welcome to Social Media stream
-      </h1>
-      <h2>New Application launch success</h2>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/">
+          <Route index element={<Entry />} />
+          <Route path="*" element={<Error404 />} />
+        </Route>
+
+        <Route path="/status">
+          <Route index element={<StatusEntry />} />
+          <Route path="api" element={<ApiStatus />} />
+          <Route path="mongo" element={<MongoStatus />} />
+          <Route path="*" element={<Error404 />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
-export default App;
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
