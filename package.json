@@ -11,10 +11,10 @@
     "start:prod": "NODE_ENV=production node apps/backend/dist/index.js",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "fmt": "npx prettier . --write",
     "check-types": "turbo run check-types",
     "clean": "rm -rf node_modules",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "fmtbe":"npx prettier --write apps/backend"
   },
   "repository": {
     "type": "git",

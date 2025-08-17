@@ -3,12 +3,12 @@ import AppError from '../utils/appError';
 import mongoose from 'mongoose';
 import { HTTP_STATUS } from '../constants/httpStatus';
 
-const handleCastErroDB = (err: mongoose.Error.CastError) => {
+const handleCastErrorDB = (err: mongoose.Error.CastError) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
   return new AppError(message, HTTP_STATUS.BAD_REQUEST);
 };
 
-const handleDublicateFieldsDB = (err: any) => {
+const handleDuplicateFieldsDB = (err: any) => {
   const value = err.errorResponse.errmsg.match(/(["'])(\\?.)*?\1/)[0];
 
   const message = `The value '${value}' is already in use. Please choose a different value.`;
@@ -64,8 +64,8 @@ const globalErrorHandler = (
   } else if (process.env.NODE_ENV === 'production') {
     let error = Object.create(err);
 
-    if (error.name === 'CastError') error = handleCastErroDB(error);
-    if (error.code === 11000) error = handleDublicateFieldsDB(error);
+    if (error.name === 'CastError') error = handleCastErrorDB(error);
+    if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
 
