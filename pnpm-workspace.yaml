@@ -1,3 +1,4 @@
 packages:
-  - "apps/backend" #exclude frontend for now
+  - "apps/backend"
+  - "apps/frontend"
   - "packages/*"

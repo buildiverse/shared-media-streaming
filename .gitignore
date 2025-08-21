@@ -154,3 +154,5 @@ vite.config.ts.timestamp-*
 # Misc
 .DS_Store
 *.pem
+.devcontainer/
+Makefile
