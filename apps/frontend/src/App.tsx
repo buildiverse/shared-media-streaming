@@ -7,23 +7,41 @@ import { MongoStatus } from './routes/status/Mongo.tsx';
 import { StatusEntry } from './routes/status/StatusEntry.tsx';
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/">
-          <Route index element={<Entry />} />
-          <Route path="*" element={<Error404 />} />
-        </Route>
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route path='/'>
+					<Route
+						index
+						element={<Entry />}
+					/>
+					<Route
+						path='*'
+						element={<Error404 />}
+					/>
+				</Route>
 
-        <Route path="/status">
-          <Route index element={<StatusEntry />} />
-          <Route path="api" element={<ApiStatus />} />
-          <Route path="mongo" element={<MongoStatus />} />
-          <Route path="*" element={<Error404 />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+				<Route path='/status'>
+					<Route
+						index
+						element={<StatusEntry />}
+					/>
+					<Route
+						path='api'
+						element={<ApiStatus />}
+					/>
+					<Route
+						path='mongo'
+						element={<MongoStatus />}
+					/>
+					<Route
+						path='*'
+						element={<Error404 />}
+					/>
+				</Route>
+			</Routes>
+		</BrowserRouter>
+	);
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
