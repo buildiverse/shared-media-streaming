@@ -50,6 +50,7 @@ pm2 monit                         # Monitor processes
 ### 3. Docker Deployment
 
 #### Single Container
+
 ```bash
 # Build and run with Docker
 pnpm run prod:docker
@@ -60,6 +61,7 @@ docker run -p 3000:3000 --env-file .env.production shared-media-streaming-backen
 ```
 
 #### Docker Compose (Full Stack)
+
 ```bash
 # Start full production stack
 docker-compose -f docker-compose.prod.yml up -d
@@ -91,11 +93,13 @@ PORT=3000
 ### 2. MongoDB Setup Options
 
 #### Option A: MongoDB Atlas (Cloud)
+
 1. Create cluster at https://cloud.mongodb.com/
 2. Get connection string
 3. Update `MONGO_URI` in `.env.production`
 
 #### Option B: Self-hosted MongoDB
+
 ```bash
 # Install MongoDB
 sudo apt install mongodb-server
@@ -111,6 +115,7 @@ MONGO_URI=mongodb://localhost:27017/shared-media-streaming
 ## Server Setup (Ubuntu/Debian)
 
 ### 1. Install Dependencies
+
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -139,6 +144,7 @@ sudo usermod -aG docker $USER
 ```
 
 ### 2. Deploy Application
+
 ```bash
 # Clone repository
 git clone <your-repo-url>
@@ -163,6 +169,7 @@ pm2 save
 ```
 
 ### 3. Nginx Reverse Proxy (Optional)
+
 ```bash
 # Install Nginx
 sudo apt install nginx
@@ -197,6 +204,7 @@ sudo systemctl restart nginx
 ## pnpm-Specific Configuration
 
 ### 1. Workspace Setup
+
 Since you're using a monorepo with pnpm workspaces, ensure your root `pnpm-workspace.yaml` is configured:
 
 ```yaml
@@ -206,6 +214,7 @@ packages:
 ```
 
 ### 2. Production Build from Root
+
 ```bash
 # From project root, build all apps
 pnpm run build
@@ -218,6 +227,7 @@ pnpm --filter backend run prod
 ```
 
 ### 3. Environment Variables in Workspace
+
 You can also set environment variables at the workspace level:
 
 ```bash
@@ -228,6 +238,7 @@ NODE_ENV=production pnpm --filter backend run start
 ## Monitoring and Logs
 
 ### PM2 Monitoring
+
 ```bash
 pm2 monit                     # Real-time monitoring
 pm2 logs                      # View all logs
@@ -236,6 +247,7 @@ pm2 flush                     # Clear logs
 ```
 
 ### Docker Monitoring
+
 ```bash
 docker logs shared-media-streaming-backend -f    # Follow logs
 docker stats                                     # Resource usage
@@ -251,6 +263,7 @@ The application includes health check endpoints:
 ## pnpm Performance Benefits
 
 ### Faster Installs
+
 ```bash
 # pnpm is significantly faster than npm
 pnpm install                    # Fast install
@@ -258,10 +271,12 @@ pnpm install --frozen-lockfile  # Production install (no lockfile changes)
 ```
 
 ### Disk Space Savings
+
 - pnpm uses hard links to save disk space
 - Shared dependencies across projects in monorepo
 
 ### Better Dependency Management
+
 ```bash
 # List dependencies
 pnpm list
@@ -276,12 +291,14 @@ pnpm update
 ## Production Commands Summary
 
 ### Development
+
 ```bash
 pnpm run dev           # Start development server
 pnpm run dev:local     # Start with explicit local env
 ```
 
 ### Building
+
 ```bash
 pnpm run clean         # Clean dist folder
 pnpm run build         # Build for development
@@ -289,6 +306,7 @@ pnpm run build:prod    # Build for production
 ```
 
 ### Production
+
 ```bash
 pnpm run start         # Start production server
 pnpm run prod          # Build and start production
@@ -297,6 +315,7 @@ pnpm run prod:docker   # Build and run with Docker
 ```
 
 ### Workspace Commands (from root)
+
 ```bash
 # Install all dependencies
 pnpm install
@@ -319,6 +338,7 @@ pnpm -r run build
 ### Common pnpm Issues
 
 1. **pnpm not found**:
+
    ```bash
    # Install pnpm
    npm install -g pnpm
@@ -327,6 +347,7 @@ pnpm -r run build
    ```
 
 2. **Lockfile issues**:
+
    ```bash
    # Remove lockfile and reinstall
    rm pnpm-lock.yaml
@@ -334,6 +355,7 @@ pnpm -r run build
    ```
 
 3. **Permission issues**:
+
    ```bash
    # Fix pnpm global directory permissions
    mkdir -p ~/.pnpm
@@ -350,11 +372,13 @@ pnpm -r run build
 ### Performance Tips
 
 1. **Use frozen lockfile in production**:
+
    ```bash
    pnpm install --frozen-lockfile
    ```
 
 2. **Enable shamefully-hoist for compatibility**:
+
    ```bash
    echo "shamefully-hoist=true" >> .npmrc
    ```
@@ -374,3 +398,4 @@ pnpm -r run build
 - [ ] Rate limiting implemented
 - [ ] Input validation in place
 - [ ] Use `pnpm audit` regularly for vulnerability checks
+- [ ] HSTS

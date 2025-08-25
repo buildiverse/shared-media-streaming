@@ -1,0 +1,56 @@
+/* Basic Layout CSS - Layout Only, No Styling */
+
+/* Reset and base styles */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	font-family:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+	line-height: 1.6;
+}
+
+/* Layout containers - only basic structure */
+.dashboard-layout,
+.auth-layout {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.dashboard-layout__header,
+.auth-layout__header {
+	flex-shrink: 0;
+}
+
+.dashboard-layout__main,
+.auth-layout__main {
+	flex: 1;
+	padding: 20px;
+}
+
+.dashboard-layout__footer,
+.auth-layout__footer {
+	flex-shrink: 0;
+	padding: 20px;
+	text-align: center;
+}
+
+/* Basic grid layout for media */
+.media-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 20px;
+	padding: 20px 0;
+}
+
+/* Basic responsive */
+@media (max-width: 768px) {
+	.media-grid {
+		grid-template-columns: 1fr;
+	}
+}

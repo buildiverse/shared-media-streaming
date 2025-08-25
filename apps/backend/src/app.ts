@@ -1,187 +1,113 @@
 import cors from 'cors';
 import express from 'express';
-import mongoose from 'mongoose';
 import mongoSanitize from 'express-mongo-sanitize';
-import { rateLimiterConfig, helmetConfig } from './middleware/configurations';
-import { requestIdMiddleware, globalErrorHandler } from './middleware';
-import AppError from './utils/appError';
-import { HTTP_STATUS } from './constants/httpStatus';
-import { LoggingService } from './services';
+import { CreateUserUseCase } from './application/use-cases/create-user.usecase';
+import { DeleteMediaUseCase } from './application/use-cases/delete-media.usecase';
+import { GetMediaByIdUseCase } from './application/use-cases/get-media-by-id.usecase';
+import { GetUserMediaUseCase } from './application/use-cases/get-user-media.usecase';
+import { LoginUseCase } from './application/use-cases/login.usecase';
+import { UploadMediaUseCase } from './application/use-cases/upload-media.usecase';
+import { HTTP_STATUS } from './infrastructure/constants/http-status';
+import { BcryptPasswordService } from './infrastructure/crypto/bcrypt-password.service';
+import { MediaRepository } from './infrastructure/db/mongoose/repositories/media.repository';
+import { TokenRepository } from './infrastructure/db/mongoose/repositories/token.repository';
+import { UserRepository } from './infrastructure/db/mongoose/repositories/user.repository';
+import { AuthService } from './infrastructure/services/auth.service';
+import { LoggingService } from './infrastructure/services/logging.service';
+import { S3UploadService } from './infrastructure/services/s3-upload.service';
+import { AuthController } from './interface/http/controllers/auth.controller';
+import { MediaController } from './interface/http/controllers/media.controller';
+import { UserController } from './interface/http/controllers/user.controller';
+import { globalErrorHandler, requestIdMiddleware } from './interface/http/middlewares';
+import { helmetConfig, rateLimiterConfig } from './interface/http/middlewares/configurations';
+import { createAuthRoutes } from './interface/http/routes/auth.routes';
+import { createMediaRoutes } from './interface/http/routes/media.routes';
+import { createUserRoutes } from './interface/http/routes/user.routes';
 
 const app = express();
 
-// Instantiate services
-const loggingService = new LoggingService();
-
-// Middleware
+// Basic middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(rateLimiterConfig);
-app.use(helmetConfig);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request ID middleware for tracing
+// Security middleware
+app.use(helmetConfig);
+app.use(rateLimiterConfig);
+
+// --- Clean Architecture Dependency Injection ---
+
+// 1. Initialize services
+const loggingService = new LoggingService();
+const passwordService = new BcryptPasswordService();
+const authService = new AuthService();
+const s3UploadService = new S3UploadService();
+
+// 2. Initialize repositories
+const userRepository = new UserRepository();
+const tokenRepository = new TokenRepository();
+const mediaRepository = new MediaRepository();
+
+// 3. Initialize use cases
+const createUserUseCase = new CreateUserUseCase(userRepository, passwordService);
+const loginUseCase = new LoginUseCase(
+	userRepository,
+	tokenRepository,
+	passwordService,
+	authService,
+);
+const uploadMediaUseCase = new UploadMediaUseCase(mediaRepository, s3UploadService, loggingService);
+const getUserMediaUseCase = new GetUserMediaUseCase(mediaRepository, loggingService);
+const getMediaByIdUseCase = new GetMediaByIdUseCase(mediaRepository, loggingService);
+const deleteMediaUseCase = new DeleteMediaUseCase(mediaRepository, s3UploadService, loggingService);
+
+// 4. Initialize controllers with use cases
+const userController = new UserController(createUserUseCase, userRepository, loggingService);
+const authController = new AuthController(loginUseCase, loggingService);
+const mediaController = new MediaController(
+	uploadMediaUseCase,
+	getUserMediaUseCase,
+	getMediaByIdUseCase,
+	deleteMediaUseCase,
+	loggingService,
+);
+
+// 5. Request ID middleware for tracing
 app.use(requestIdMiddleware(loggingService));
 
-// Data sanitization against NoSQL query injection
+// 6. Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
 
-// Health check route
-app.get('/', (_req, res) => {
-	res.json({
-		message: 'Shared Media Streaming API',
-		status: 'running',
-		timestamp: new Date().toISOString(),
-		environment: process.env.NODE_ENV || 'development',
-	});
-});
-
-// MongoDB connection check route (development only)
-if (process.env.NODE_ENV === 'development') {
-	app.get('/check-mongo', async (_req, res) => {
-		try {
-			// Check if mongoose is connected
-			const connectionState = mongoose.connection.readyState;
-
-			const states: { [key: number]: string } = {
-				0: 'disconnected',
-				1: 'connected',
-				2: 'connecting',
-				3: 'disconnecting',
-				99: 'uninitialized',
-			};
-
-			if (connectionState === 1 && mongoose.connection.db) {
-				try {
-					// Try to get basic database info
-					const collections = await mongoose.connection.db.listCollections().toArray();
-					let serverInfo = {};
-
-					try {
-						// Try to get server status (may require auth)
-						const admin = mongoose.connection.db.admin();
-						const serverStatus = await admin.serverStatus();
-						serverInfo = {
-							host: serverStatus.host,
-							version: serverStatus.version,
-							uptime: `${Math.floor(serverStatus.uptime / 60)} minutes`,
-						};
-					} catch (authError) {
-						// If we can't get server status due to auth, that's okay
-						console.log('Note: Cannot get server status (likely requires auth)');
-						serverInfo = {
-							note: 'Server details require admin authentication',
-						};
-					}
-
-					res.json({
-						success: true,
-						message: 'Successfully connected to MongoDB',
-						connectionState: states[connectionState] || 'unknown',
-						database: mongoose.connection.name || 'default',
-						collections: collections.map((c) => c.name),
-						...serverInfo,
-					});
-				} catch (dbError) {
-					const error = new AppError(
-						'MongoDB connected but cannot access database',
-						HTTP_STATUS.SERVICE_UNAVAILABLE,
-					);
-
-					res.status(error.statusCode).json({
-						success: false,
-						message: error.message,
-						connectionState: states[connectionState] || 'unknown',
-						error: dbError instanceof Error ? dbError.message : 'Unknown database error',
-					});
-				}
-			} else {
-				const error = new AppError('MongoDB is not connected', HTTP_STATUS.SERVICE_UNAVAILABLE);
-
-				res.status(error.statusCode).json({
-					success: false,
-					message: error.message,
-					connectionState: states[connectionState] || 'unknown',
-					mongoUri: process.env.MONGO_URI ? 'Set' : 'Not set',
-				});
-			}
-		} catch (error) {
-			console.error('MongoDB health check failed:', error);
-			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-				success: false,
-				message: 'Failed to check MongoDB connection',
-				error: error instanceof Error ? error.message : 'Unknown error',
-				connectionState: mongoose.connection.readyState,
-			});
-		}
-	});
-}
-
-// API status route
-app.get('/api/status', (_req, res) => {
-	const memoryUsage = process.memoryUsage();
-
-	res.json({
-		api: {
-			name: 'Shared Media Streaming API',
-			version: '1.0.0',
-			status: 'operational',
-		},
-		server: {
-			environment: process.env.NODE_ENV || 'development',
-			nodeVersion: process.version,
-			platform: process.platform,
-			uptime: `${Math.floor(process.uptime())} seconds`,
-			pid: process.pid,
-		},
-		memory: {
-			rss: `${Math.round(memoryUsage.rss / 1024 / 1024)} MB`,
-			heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)} MB`,
-			heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)} MB`,
-			external: `${Math.round(memoryUsage.external / 1024 / 1024)} MB`,
-		},
-		database: {
-			connected: mongoose.connection.readyState === 1,
-			state: ['disconnected', 'connected', 'connecting', 'disconnecting'][
-				mongoose.connection.readyState
-			],
-		},
-		timestamp: new Date().toISOString(),
-	});
-});
-
-// Environment info route (development only)
-if (process.env.NODE_ENV === 'development') {
-	app.get('/api/env', (_req, res) => {
-		const safeEnvVars = {
-			NODE_ENV: process.env.NODE_ENV,
-			PORT: process.env.PORT,
-			MONGO_URI: process.env.MONGO_URI ? `${process.env.MONGO_URI.substring(0, 20)}...` : 'Not set',
-		};
-
-		res.json({
-			environment: safeEnvVars,
-			warning: 'Sensitive values are masked for security',
-		});
-	});
-}
+// Mount routes
+app.use('/api/v1/users', createUserRoutes(userController, authService));
+app.use('/api/v1/auth', createAuthRoutes(authController));
+app.use('/api/v1/media', createMediaRoutes(mediaController, authService));
 
 // 404 handler for undefined routes
+// Routes should be hidden in production
 app.use('*', (_req, res) => {
-	const endpoints = ['GET /', 'GET /api/status'];
-
-	if (process.env.NODE_ENV === 'development') {
-		endpoints.push('GET /check-mongo', 'GET /api/env');
-	}
-
 	res.status(HTTP_STATUS.NOT_FOUND).json({
 		success: false,
 		message: 'API endpoint not found',
-		availableEndpoints: endpoints,
+		availableEndpoints: [
+			'GET /health',
+			'GET /status',
+			'GET /mongo (development only)',
+			'GET /api/v1/users/check-username/:username',
+			'GET /api/v1/users/check-email/:email',
+			'POST /api/v1/users/signup',
+			'POST /api/v1/auth/login',
+			'POST /api/v1/auth/refresh-token',
+			'POST /api/v1/auth/logout',
+			'POST /api/v1/media/upload',
+			'GET /api/v1/media/my-media',
+			'GET /api/v1/media/:id',
+			'DELETE /api/v1/media/:id',
+		],
 	});
 });
 
 // Global error handler
-app.use(globalErrorHandler(loggingService));
+app.use(globalErrorHandler);
 
 export default app;
