@@ -2,79 +2,105 @@ import { Media } from '../../domain/entities/media.entity';
 import { IMediaRepository } from '../../domain/repositories/imedia.repository';
 import { IFileUploadService } from '../../domain/services/ifile-upload.service';
 import { ILoggingService } from '../../domain/services/ilogging.service';
+import { IThumbnailService } from '../../domain/services/ithumbnail.service';
 
 export interface UploadMediaInput {
 	title: string;
 	description?: string;
-	filename: string;
+	file: Buffer;
 	originalName: string;
 	mimeType: string;
 	size: number;
-	buffer: Buffer;
+	duration: number;
 	uploadedBy: string;
+	generateThumbnails?: boolean;
 }
 
 export interface UploadMediaResult {
 	media: Media;
-	uploadUrl: string;
+	thumbnails: string[];
 }
 
 export class UploadMediaUseCase {
 	constructor(
-		private mediaRepository: IMediaRepository,
-		private fileUploadService: IFileUploadService,
-		private loggingService: ILoggingService,
+		private readonly mediaRepository: IMediaRepository,
+		private readonly fileUploadService: IFileUploadService,
+		private readonly thumbnailService: IThumbnailService,
+		private readonly loggingService: ILoggingService,
 	) {}
 
 	async execute(input: UploadMediaInput): Promise<UploadMediaResult> {
-		// Validate media data
-		if (!Media.validateTitle(input.title)) {
-			throw new Error('Invalid title (1-100 characters)');
+		try {
+			this.loggingService.info('Starting media upload with thumbnails', {
+				originalName: input.originalName,
+				mimeType: input.mimeType,
+				size: input.size,
+				uploadedBy: input.uploadedBy,
+				generateThumbnails: input.generateThumbnails,
+			});
+
+			// Upload main file to S3
+			const uploadResult = await this.fileUploadService.uploadFile(
+				input.file,
+				input.originalName,
+				input.mimeType,
+			);
+
+			// Generate thumbnails for video files if requested
+			let thumbnails: string[] = [];
+			if (input.generateThumbnails !== false && input.mimeType.startsWith('video/')) {
+				try {
+					thumbnails = await this.thumbnailService.generateThumbnails(
+						input.file,
+						input.originalName,
+						input.mimeType,
+					);
+					this.loggingService.info('Generated thumbnails successfully', {
+						originalName: input.originalName,
+						thumbnailCount: thumbnails.length,
+					});
+				} catch (thumbnailError) {
+					this.loggingService.warn('Failed to generate thumbnails, continuing without them', {
+						originalName: input.originalName,
+						error: thumbnailError instanceof Error ? thumbnailError.message : 'Unknown error',
+					});
+				}
+			}
+
+			// Create media entity
+			const mediaData = {
+				title: input.title,
+				description: input.description || '',
+				filename: uploadResult.key.split('/').pop() || input.originalName,
+				originalName: input.originalName,
+				mimeType: input.mimeType,
+				size: input.size,
+				duration: input.duration,
+				url: uploadResult.url,
+				s3Key: uploadResult.key,
+				uploadedBy: input.uploadedBy,
+				thumbnails,
+			};
+
+			const media = await this.mediaRepository.create(mediaData);
+
+			this.loggingService.info('Media upload completed successfully', {
+				mediaId: media.id,
+				originalName: input.originalName,
+				thumbnailCount: thumbnails.length,
+			});
+
+			return {
+				media,
+				thumbnails,
+			};
+		} catch (error) {
+			this.loggingService.error('Media upload failed', {
+				originalName: input.originalName,
+				uploadedBy: input.uploadedBy,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			});
+			throw error;
 		}
-
-		if (input.description && !Media.validateDescription(input.description)) {
-			throw new Error('Description too long (max 500 characters)');
-		}
-
-		if (!Media.validateFileSize(input.size)) {
-			throw new Error('File too large (max 500MB)');
-		}
-
-		if (!Media.validateMimeType(input.mimeType)) {
-			throw new Error('Unsupported file type');
-		}
-
-		// Upload to S3
-		const uploadResult = await this.fileUploadService.uploadFile(
-			input.buffer,
-			input.originalName,
-			input.mimeType,
-		);
-
-		// Create media record
-		const media = await this.mediaRepository.create({
-			title: input.title,
-			description: input.description || '',
-			filename: input.filename,
-			originalName: input.originalName,
-			mimeType: input.mimeType,
-			size: input.size,
-			duration: 0, // TODO: Extract duration from media file
-			url: uploadResult.url,
-			s3Key: uploadResult.key,
-			uploadedBy: input.uploadedBy,
-		});
-
-		this.loggingService.info('Media uploaded successfully', {
-			mediaId: media.id,
-			title: media.title,
-			userId: input.uploadedBy,
-			fileSize: media.getFileSizeInMB(),
-		});
-
-		return {
-			media,
-			uploadUrl: uploadResult.url,
-		};
 	}
 }

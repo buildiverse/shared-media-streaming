@@ -13,12 +13,16 @@ export interface Media {
 	title: string;
 	description?: string;
 	filename: string;
+	originalName: string;
 	mimeType: string;
 	size: number;
 	url: string;
+	s3Key: string;
 	uploadedBy: string;
-	uploadedAt: string;
-	duration?: number;
+	duration: number;
+	thumbnails: string[];
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface AuthState {

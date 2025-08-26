@@ -50,11 +50,11 @@ export class MediaController {
 			const result = await this.uploadMediaUseCase.execute({
 				title,
 				description,
-				filename: req.file.filename,
+				file: req.file.buffer,
 				originalName: req.file.originalname,
 				mimeType: req.file.mimetype,
 				size: req.file.size,
-				buffer: req.file.buffer,
+				duration: 0, // TODO: Extract actual duration from video/audio files
 				uploadedBy: userId,
 			});
 
@@ -80,6 +80,7 @@ export class MediaController {
 					duration: result.media.duration,
 					url: result.media.url,
 					uploadedBy: result.media.uploadedBy,
+					thumbnails: result.media.thumbnails,
 					createdAt: result.media.createdAt,
 				},
 			});
@@ -140,6 +141,7 @@ export class MediaController {
 					duration: m.duration,
 					url: m.url,
 					uploadedBy: m.uploadedBy,
+					thumbnails: m.thumbnails,
 					createdAt: m.createdAt,
 				})),
 				pagination: {
@@ -201,6 +203,7 @@ export class MediaController {
 					duration: media.duration,
 					url: media.url,
 					uploadedBy: media.uploadedBy,
+					thumbnails: media.thumbnails,
 					createdAt: media.createdAt,
 				},
 			});

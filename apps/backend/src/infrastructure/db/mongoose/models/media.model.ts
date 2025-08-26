@@ -11,6 +11,7 @@ export interface IMediaDocument extends Document {
 	url: string;
 	s3Key: string;
 	uploadedBy: string;
+	thumbnails: string[];
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -62,6 +63,10 @@ const mediaSchema = new Schema<IMediaDocument>(
 			type: String,
 			required: true,
 			index: true,
+		},
+		thumbnails: {
+			type: [String],
+			required: false,
 		},
 	},
 	{

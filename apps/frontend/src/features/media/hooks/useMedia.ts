@@ -1,12 +1,13 @@
 // useMedia Hook
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ApiService } from '../../../services/api';
 import { Media } from '../../../types';
 
 export const useMedia = () => {
 	const [media, setMedia] = useState<Media[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const apiService = new ApiService();
@@ -43,12 +44,12 @@ export const useMedia = () => {
 
 	// Upload media
 	const uploadMedia = async (file: File, title: string, description?: string) => {
-		setIsLoading(true);
+		setUploading(true);
 		setError(null);
 
 		try {
 			const formData = new FormData();
-			formData.append('file', file);
+			formData.append('media', file);
 			formData.append('title', title);
 			if (description) {
 				formData.append('description', description);
@@ -61,11 +62,27 @@ export const useMedia = () => {
 
 			return response;
 		} catch (err: any) {
-			const errorMessage = err.response?.data?.message || 'Failed to upload media';
-			setError(errorMessage);
-			throw new Error(errorMessage);
+			// Handle specific error cases
+			if (err.response?.status === 401) {
+				const errorMessage = 'Authentication expired. Please log in again.';
+				setError(errorMessage);
+				// Don't throw here - let the component handle the auth state
+				return null;
+			} else if (err.response?.status === 413) {
+				const errorMessage = 'File too large. Please choose a smaller file.';
+				setError(errorMessage);
+			} else if (err.response?.status === 429) {
+				const errorMessage = 'Too many requests. Please wait a moment and try again.';
+				setError(errorMessage);
+			} else {
+				const errorMessage = err.response?.data?.message || 'Failed to upload media';
+				setError(errorMessage);
+			}
+
+			// Don't throw for upload errors - just return null
+			return null;
 		} finally {
-			setIsLoading(false);
+			setUploading(false);
 		}
 	};
 
@@ -99,14 +116,10 @@ export const useMedia = () => {
 		setError(null);
 	};
 
-	// Initial fetch
-	useEffect(() => {
-		fetchMedia();
-	}, []);
-
 	return {
 		media,
 		isLoading,
+		uploading,
 		error,
 		fetchMedia,
 		fetchUserMedia,

@@ -18,6 +18,7 @@ export class MediaRepository implements IMediaRepository {
 			media.url,
 			media.s3Key,
 			media.uploadedBy,
+			media.thumbnails || [],
 			media.createdAt,
 			media.updatedAt,
 		);
@@ -39,6 +40,7 @@ export class MediaRepository implements IMediaRepository {
 			media.url,
 			media.s3Key,
 			media.uploadedBy,
+			media.thumbnails || [],
 			media.createdAt,
 			media.updatedAt,
 		);
@@ -61,6 +63,7 @@ export class MediaRepository implements IMediaRepository {
 					m.url,
 					m.s3Key,
 					m.uploadedBy,
+					m.thumbnails || [],
 					m.createdAt,
 					m.updatedAt,
 				),
@@ -84,6 +87,7 @@ export class MediaRepository implements IMediaRepository {
 					m.url,
 					m.s3Key,
 					m.uploadedBy,
+					m.thumbnails || [],
 					m.createdAt,
 					m.updatedAt,
 				),
@@ -111,6 +115,7 @@ export class MediaRepository implements IMediaRepository {
 			media.url,
 			media.s3Key,
 			media.uploadedBy,
+			media.thumbnails || [],
 			media.createdAt,
 			media.updatedAt,
 		);
@@ -143,6 +148,7 @@ export class MediaRepository implements IMediaRepository {
 					m.url,
 					m.s3Key,
 					m.uploadedBy,
+					m.thumbnails || [],
 					m.createdAt,
 					m.updatedAt,
 				),

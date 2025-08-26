@@ -6,12 +6,11 @@ export class S3UploadService implements IFileUploadService {
 	private bucket: string;
 
 	constructor() {
-		this.bucket = process.env.AWS_S3_BUCKET || 'shared-media-streaming';
-
+		this.bucket = process.env.S3_BUCKET || 'shared-media-streaming';
 		this.s3 = new AWS.S3({
-			accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-			secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-			region: process.env.AWS_REGION || 'us-east-1',
+			accessKeyId: process.env.S3_USER_KEY,
+			secretAccessKey: process.env.S3_SECRET,
+			region: process.env.S3_REGION || 'us-east-1',
 		});
 	}
 
@@ -24,19 +23,19 @@ export class S3UploadService implements IFileUploadService {
 		key: string;
 		bucket: string;
 	}> {
-		const key = `uploads/${Date.now()}-${filename}`;
+		const key = `uploads/media/${Date.now()}-${filename}`;
 
 		const uploadParams: AWS.S3.PutObjectRequest = {
 			Bucket: this.bucket,
 			Key: key,
 			Body: file,
 			ContentType: mimeType,
-			ACL: 'public-read', // For MVP, later we can make this configurable
+			// ACL removed - bucket has ACLs disabled
 		};
 
 		await this.s3.upload(uploadParams).promise();
 
-		const url = `https://${this.bucket}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+		const url = `https://${this.bucket}.s3.${process.env.S3_REGION || 'us-east-1'}.amazonaws.com/${key}`;
 
 		return {
 			url,
@@ -68,5 +67,42 @@ export class S3UploadService implements IFileUploadService {
 		};
 
 		return this.s3.getSignedUrl('getObject', params);
+	}
+
+	async uploadThumbnail(thumbnailBuffer: Buffer, filename: string): Promise<string> {
+		const key = `uploads/thumbnails/${Date.now()}-${filename}`;
+
+		const uploadParams: AWS.S3.PutObjectRequest = {
+			Bucket: this.bucket,
+			Key: key,
+			Body: thumbnailBuffer,
+			ContentType: 'image/jpeg',
+			// ACL removed - bucket has ACLs disabled
+		};
+
+		await this.s3.upload(uploadParams).promise();
+
+		const url = `https://${this.bucket}.s3.${process.env.S3_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+
+		return url;
+	}
+
+	async deleteThumbnail(thumbnailUrl: string): Promise<boolean> {
+		try {
+			// Extract key from URL
+			const urlParts = thumbnailUrl.split('/');
+			const key = urlParts.slice(-2).join('/'); // thumbnails/filename
+
+			await this.s3
+				.deleteObject({
+					Bucket: this.bucket,
+					Key: key,
+				})
+				.promise();
+			return true;
+		} catch (error) {
+			console.error('Failed to delete thumbnail from S3:', error);
+			return false;
+		}
 	}
 }

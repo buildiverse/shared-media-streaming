@@ -18,7 +18,6 @@ import { useRooms } from '../../features/rooms/hooks/useRooms';
 import { Button } from '../../ui/atoms/Button';
 import { MediaGrid } from '../../ui/organisms/MediaGrid';
 import { HomePage } from '../../ui/pages/HomePage';
-import { RoomPage } from '../../ui/pages/RoomPage/RoomPage';
 import { DashboardLayout } from '../../ui/templates/DashboardLayout';
 
 // Protected Route Component
@@ -111,12 +110,7 @@ const AppRoutesContent: React.FC = () => {
 							user={user!}
 							onLogout={handleLogout}
 						>
-							<MediaUpload
-								onUpload={async (file, title, description) => {
-									// This will be implemented with the media service
-									console.log('Upload:', { file, title, description });
-								}}
-							/>
+							<UploadPage />
 						</DashboardLayout>
 					</ProtectedRoute>
 				}
@@ -168,7 +162,7 @@ const AppRoutesContent: React.FC = () => {
 				path='/room/:roomCode'
 				element={
 					<ProtectedRoute>
-						<RoomPage />
+						<div>Room Page - Coming Soon</div>
 					</ProtectedRoute>
 				}
 			/>
@@ -384,6 +378,35 @@ const JoinRoom: React.FC = () => {
 					)}
 				</div>
 			</div>
+		</div>
+	);
+};
+
+// Upload Page Component
+const UploadPage: React.FC = () => {
+	const { uploadMedia, uploading, error } = useMedia();
+
+	const handleUpload = async (file: File, title: string, description?: string) => {
+		try {
+			const result = await uploadMedia(file, title, description);
+			if (result) {
+				console.log('Upload successful!');
+				// Could add success notification here
+			} else {
+				console.log('Upload failed - check error state');
+				// Error is already set in the useMedia hook
+			}
+		} catch (error) {
+			console.error('Unexpected upload error:', error);
+		}
+	};
+
+	return (
+		<div className='upload-page'>
+			<h1>Upload Media</h1>
+			<MediaUpload onUpload={handleUpload} />
+			{uploading && <p>Uploading...</p>}
+			{error && <p style={{ color: 'red' }}>Error: {error}</p>}
 		</div>
 	);
 };

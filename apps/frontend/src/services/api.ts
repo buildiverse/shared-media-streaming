@@ -6,6 +6,7 @@ import { getAuthHeaders, removeStorageItem, setStorageItem } from '../utils';
 
 class ApiService {
 	private api: AxiosInstance;
+	private isRefreshing = false; // Prevent multiple simultaneous refresh attempts
 
 	constructor() {
 		this.api = axios.create({
@@ -20,13 +21,19 @@ class ApiService {
 	}
 
 	private setupInterceptors(): void {
-		// Request interceptor to add auth token
+		// Request interceptor to add auth token and handle FormData
 		this.api.interceptors.request.use(
 			(config) => {
 				const headers = getAuthHeaders();
 				if (headers.Authorization) {
 					config.headers.Authorization = headers.Authorization;
 				}
+
+				// Don't override Content-Type for FormData
+				if (config.data instanceof FormData) {
+					delete config.headers['Content-Type'];
+				}
+
 				return config;
 			},
 			(error) => {
@@ -42,19 +49,28 @@ class ApiService {
 			async (error) => {
 				const originalRequest = error.config;
 
-				if (error.response?.status === 401 && !originalRequest._retry) {
+				// Only attempt token refresh once per request and prevent multiple simultaneous attempts
+				if (error.response?.status === 401 && !originalRequest._retry && !this.isRefreshing) {
 					originalRequest._retry = true;
+					this.isRefreshing = true; // Set global flag
 					console.log('ApiService: 401 error, attempting token refresh...');
 
 					try {
 						const refreshToken = localStorage.getItem(STORAGE_CONFIG.STORAGE.REFRESH_TOKEN_KEY);
 						if (refreshToken) {
-							const response = await this.api.post('/api/v1/auth/refresh-token', { refreshToken });
+							// Add timeout to prevent hanging refresh requests
+							const refreshPromise = this.api.post('/api/v1/auth/refresh-token', { refreshToken });
+							const timeoutPromise = new Promise<never>((_, reject) =>
+								setTimeout(() => reject(new Error('Token refresh timeout')), 10000),
+							);
+
+							const response = await Promise.race([refreshPromise, timeoutPromise]);
 							const { accessToken } = response.data;
 
 							setStorageItem(STORAGE_CONFIG.STORAGE.AUTH_TOKEN_KEY, accessToken);
 							originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
+							// Retry the original request
 							return this.api(originalRequest);
 						} else {
 							console.log('ApiService: No refresh token, clearing storage');
@@ -69,6 +85,8 @@ class ApiService {
 						removeStorageItem(STORAGE_CONFIG.STORAGE.AUTH_TOKEN_KEY);
 						removeStorageItem(STORAGE_CONFIG.STORAGE.REFRESH_TOKEN_KEY);
 						removeStorageItem(STORAGE_CONFIG.STORAGE.USER_KEY);
+					} finally {
+						this.isRefreshing = false; // Reset global flag
 					}
 				}
 

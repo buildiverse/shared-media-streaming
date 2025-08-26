@@ -11,6 +11,7 @@ export class Media {
 		public readonly url: string,
 		public readonly s3Key: string,
 		public readonly uploadedBy: string, // userId
+		public readonly thumbnails: string[] = [],
 		public readonly createdAt: Date = new Date(),
 		public readonly updatedAt: Date = new Date(),
 	) {}
@@ -29,6 +30,7 @@ export class Media {
 			this.url,
 			this.s3Key,
 			this.uploadedBy,
+			this.thumbnails,
 			this.createdAt,
 			new Date(),
 		);

@@ -1,11 +1,7 @@
+// Load environment variables FIRST, before any other imports
 import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
-
-import app from './app';
-import { connectDB } from './infrastructure/config/db';
-import { createServer } from 'http';
-import { socketService } from './app';
 
 // Load environment variables based on NODE_ENV
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -23,18 +19,23 @@ for (const envFile of envFiles) {
 	}
 }
 
+// Now import the rest of the application AFTER environment variables are loaded
+import { createServer } from 'http';
+import app, { socketService } from './app';
+import { connectDB } from './infrastructure/config/db';
+
 const port = process.env.PORT || 3000;
 
 async function startServer() {
 	try {
 		await connectDB();
-		
+
 		// Create HTTP server from Express app
 		const httpServer = createServer(app);
-		
+
 		// Initialize socket service with HTTP server
 		socketService.initialize(httpServer);
-		
+
 		// Start HTTP server (which will also start WebSocket server)
 		httpServer.listen(port, () => {
 			console.log(`🚀 HTTP server running on port ${port}`);

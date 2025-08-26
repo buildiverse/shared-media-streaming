@@ -13,7 +13,8 @@ describe('Media Entity', () => {
 			120, // 2 minutes
 			'https://s3.example.com/test.mp4',
 			'uploads/test.mp4',
-			'user123'
+			'user123',
+			[], // thumbnails
 		);
 
 		expect(media.title).toBe('Test Video');

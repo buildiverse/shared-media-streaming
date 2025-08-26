@@ -22,6 +22,7 @@ import { LoggingService } from './infrastructure/services/logging.service';
 import { RoomStateService } from './infrastructure/services/room-state.service';
 import { S3UploadService } from './infrastructure/services/s3-upload.service';
 import { SocketService } from './infrastructure/services/socket.service';
+import { ThumbnailService } from './infrastructure/services/thumbnail.service';
 
 import { AuthController } from './interface/http/controllers/auth.controller';
 import { MediaController } from './interface/http/controllers/media.controller';
@@ -53,6 +54,7 @@ const passwordService = new BcryptPasswordService();
 const authService = new AuthService();
 const roomStateService = new RoomStateService();
 const s3UploadService = new S3UploadService();
+const thumbnailService = new ThumbnailService(s3UploadService);
 
 // 2. Initialize repositories
 const userRepository = new UserRepository();
@@ -72,7 +74,12 @@ const refreshTokenUseCase = new RefreshTokenUseCase(tokenRepository, userReposit
 const logoutUseCase = new LogoutUseCase(tokenRepository, userRepository);
 const createRoomUseCase = new CreateRoomUseCase(roomRepository, loggingService);
 const getPublicRoomsUseCase = new GetPublicRoomsUseCase(roomRepository, loggingService);
-const uploadMediaUseCase = new UploadMediaUseCase(mediaRepository, s3UploadService, loggingService);
+const uploadMediaUseCase = new UploadMediaUseCase(
+	mediaRepository,
+	s3UploadService,
+	thumbnailService,
+	loggingService,
+);
 const getUserMediaUseCase = new GetUserMediaUseCase(mediaRepository, loggingService);
 const getMediaByIdUseCase = new GetMediaByIdUseCase(mediaRepository, loggingService);
 const deleteMediaUseCase = new DeleteMediaUseCase(mediaRepository, s3UploadService, loggingService);
