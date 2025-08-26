@@ -59,26 +59,38 @@ export interface PaginatedResponse<T> {
 export interface AuthResponse {
 	accessToken: string;
 	refreshToken: string;
-	user: User;
+	user: User; // Required for login/register responses
+}
+
+export interface RefreshTokenResponse {
+	accessToken: string;
+	refreshToken: string;
+	user?: User; // Optional - backend may or may not include user data
+}
+
+// For responses that definitely don't include user data
+export interface TokenOnlyResponse {
+	accessToken: string;
+	refreshToken: string;
 }
 
 // Backend API endpoints
 export const API_ENDPOINTS = {
 	AUTH: {
-		LOGIN: '/api/auth/login',
-		REGISTER: '/api/auth/register',
-		LOGOUT: '/api/auth/logout',
-		REFRESH: '/api/auth/refresh',
+		LOGIN: '/api/v1/auth/login',
+		REGISTER: '/api/v1/auth/register',
+		LOGOUT: '/api/v1/auth/logout',
+		REFRESH: '/api/v1/auth/refresh-token',
 	},
 	MEDIA: {
-		UPLOAD: '/api/media/upload',
-		GET_ALL: '/api/media',
-		GET_BY_ID: '/api/media/:id',
-		DELETE: '/api/media/:id',
-		GET_USER_MEDIA: '/api/media/user/:userId',
+		UPLOAD: '/api/v1/media/upload',
+		GET_ALL: '/api/v1/media',
+		GET_BY_ID: '/api/v1/media/:id',
+		DELETE: '/api/v1/media/:id',
+		GET_USER_MEDIA: '/api/v1/media/user/:userId',
 	},
 	USERS: {
-		GET_PROFILE: '/api/users/profile',
-		UPDATE_PROFILE: '/api/users/profile',
+		GET_PROFILE: '/api/v1/users/profile',
+		UPDATE_PROFILE: '/api/v1/users/profile',
 	},
 } as const;

@@ -30,13 +30,59 @@ interface UseRoomSocketReturn {
 export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 	const { user, token, refreshToken } = useAuth();
 	const [isConnected, setIsConnected] = useState(false);
+	const [isJoined, setIsJoined] = useState(false);
 	const [users, setUsers] = useState<RoomUser[]>([]);
 	const [messages, setMessages] = useState<RoomMessage[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const socketRef = useRef<Socket | null>(null);
+	const tokenCheckIntervalRef = useRef<number | null>(null);
+
+	// Check token expiration and refresh if needed
+	const checkAndRefreshToken = useCallback(async () => {
+		if (!token) return;
+
+		try {
+			const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+			const timeUntilExpiry = tokenPayload.exp * 1000 - Date.now();
+
+			// Refresh if token expires in less than 2 minutes
+			if (timeUntilExpiry < 2 * 60 * 1000) {
+				console.log('Token expiring soon, refreshing...');
+				try {
+					await refreshToken();
+				} catch (error) {
+					console.error('Proactive token refresh failed:', error);
+					// If refresh fails, we'll handle it on the next connection attempt
+				}
+			}
+		} catch (error) {
+			console.error('Failed to check token expiration:', error);
+		}
+	}, [token, refreshToken]);
+
+	// Set up token expiration check interval
+	useEffect(() => {
+		if (isConnected && token) {
+			// Check every minute
+			tokenCheckIntervalRef.current = setInterval(checkAndRefreshToken, 60 * 1000);
+		}
+
+		return () => {
+			if (tokenCheckIntervalRef.current) {
+				clearInterval(tokenCheckIntervalRef.current);
+				tokenCheckIntervalRef.current = null;
+			}
+		};
+	}, [isConnected, token, checkAndRefreshToken]);
 
 	// Connect to socket
 	const connect = useCallback(async () => {
+		// Prevent multiple simultaneous connections
+		if (socketRef.current) {
+			console.log('useRoomSocket connect: socket already exists');
+			return;
+		}
+
 		if (!roomCode) {
 			console.log('useRoomSocket connect: missing roomCode');
 			return;
@@ -51,6 +97,29 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 			} catch (error) {
 				console.error('useRoomSocket connect: token refresh failed:', error);
 				setError('Authentication failed - please login again');
+				return;
+			}
+		}
+
+		// Check if token is expired and refresh if needed
+		if (currentToken) {
+			try {
+				const tokenPayload = JSON.parse(atob(currentToken.split('.')[1]));
+				const isExpired = tokenPayload.exp * 1000 < Date.now();
+
+				if (isExpired) {
+					console.log('useRoomSocket connect: token expired, refreshing...');
+					try {
+						currentToken = await refreshToken();
+					} catch (error) {
+						console.error('useRoomSocket connect: token refresh failed:', error);
+						setError('Authentication failed - please login again');
+						return;
+					}
+				}
+			} catch (parseError) {
+				console.error('useRoomSocket connect: failed to parse token:', parseError);
+				setError('Invalid token format');
 				return;
 			}
 		}
@@ -82,16 +151,55 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				console.log('Socket connected');
 				setIsConnected(true);
 				setError(null);
+
+				// Join the room only after the socket is connected
+				socket.emit('room:join', {
+					roomCode,
+					userId: user?.id,
+				});
 			});
 
 			socket.on('disconnect', () => {
 				console.log('Socket disconnected');
 				setIsConnected(false);
+				setIsJoined(false);
 			});
 
-			socket.on('connect_error', (error) => {
+			socket.on('connect_error', async (error) => {
 				console.error('Socket connection error:', error);
-				setError(`Failed to connect to room: ${error.message}`);
+
+				// If it's an auth error, try to refresh the token
+				if (
+					error.message.includes('jwt expired') ||
+					error.message.includes('Invalid or expired token')
+				) {
+					console.log('Auth error detected, attempting token refresh...');
+					try {
+						const newToken = await refreshToken();
+						if (newToken) {
+							console.log('Token refreshed, reconnecting...');
+							// Disconnect current socket and reconnect with new token
+							socket.disconnect();
+							socketRef.current = null;
+							// Small delay to prevent rapid reconnection
+							setTimeout(() => {
+								connect().catch(console.error);
+							}, 1000);
+							return;
+						}
+					} catch (refreshError) {
+						console.error('Token refresh failed during connection error:', refreshError);
+						setError('Authentication failed - please login again');
+						setIsConnected(false);
+						return;
+					}
+				}
+
+				if (error.message.includes('Connection limit exceeded')) {
+					setError('Too many connection attempts. Please wait a moment and try again.');
+				} else {
+					setError(`Failed to connect to room: ${error.message}`);
+				}
 				setIsConnected(false);
 			});
 
@@ -107,11 +215,13 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				console.log('Room join success:', data);
 				setUsers(data.users || []);
 				setMessages(data.messages || []);
+				setIsJoined(true);
 				setError(null);
 			});
 
 			socket.on('room:join:error', (data: any) => {
 				console.error('Room join error:', data);
+				setIsJoined(false);
 				setError(data.error || 'Failed to join room');
 			});
 
@@ -135,12 +245,6 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				setMessages((prev) => [...prev, message]);
 			});
 
-			// Remove local append on sender; rely on server broadcasting the same event to all
-			// socket.on('room:message:sent', (message: RoomMessage) => {
-			// 	console.log('Message sent:', message);
-			// 	setMessages((prev) => [...prev, message]);
-			// });
-
 			socket.on('room:message:error', (data: any) => {
 				console.error('Message error:', data);
 				setError(data.error || 'Failed to send message');
@@ -149,6 +253,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 			socket.on('room:leave:success', (data: any) => {
 				console.log('Room leave success:', data);
 				setIsConnected(false);
+				setIsJoined(false);
 				setUsers([]);
 				setMessages([]);
 			});
@@ -157,28 +262,32 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				console.log('Room destroyed:', data);
 				setError('Room has been destroyed');
 				setIsConnected(false);
+				setIsJoined(false);
 				setUsers([]);
 				setMessages([]);
-			});
-
-			// Join the room
-			socket.emit('room:join', {
-				roomCode,
-				userId: user?.id,
 			});
 		} catch (error) {
 			console.error('Failed to connect to socket:', error);
 			setError('Failed to connect to room');
 		}
-	}, [token, roomCode, user?.id]);
+	}, [token, roomCode, user?.id, refreshToken]);
 
 	// Disconnect from socket
 	const disconnect = useCallback(() => {
 		if (socketRef.current) {
+			console.log('useRoomSocket disconnect: disconnecting socket');
 			socketRef.current.disconnect();
 			socketRef.current = null;
 		}
+
+		// Clear token check interval
+		if (tokenCheckIntervalRef.current) {
+			clearInterval(tokenCheckIntervalRef.current);
+			tokenCheckIntervalRef.current = null;
+		}
+
 		setIsConnected(false);
+		setIsJoined(false);
 		setUsers([]);
 		setMessages([]);
 		setError(null);
@@ -187,14 +296,14 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 	// Send a message
 	const sendMessage = useCallback(
 		(content: string) => {
-			if (!socketRef.current || !isConnected) {
-				setError('Not connected to room');
+			if (!socketRef.current || !isConnected || !isJoined) {
+				setError('Not in a room');
 				return;
 			}
 
 			socketRef.current.emit('room:message', { content });
 		},
-		[isConnected],
+		[isConnected, isJoined],
 	);
 
 	// Leave the room
@@ -209,13 +318,42 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 	// Connect on mount
 	useEffect(() => {
 		console.log('useRoomSocket useEffect:', { roomCode, user: !!user });
-		connect().catch(console.error);
+
+		// Only connect if no socket exists
+		if (!socketRef.current) {
+			connect().catch(console.error);
+		}
 
 		// Cleanup on unmount
 		return () => {
-			disconnect();
+			// Always disconnect and clear ref on unmount
+			if (socketRef.current) {
+				socketRef.current.disconnect();
+				socketRef.current = null;
+			}
+
+			// Clear token check interval
+			if (tokenCheckIntervalRef.current) {
+				clearInterval(tokenCheckIntervalRef.current);
+				tokenCheckIntervalRef.current = null;
+			}
+
+			setIsConnected(false);
+			setIsJoined(false);
 		};
-	}, [roomCode, user, token, connect, disconnect]);
+	}, [roomCode, user]);
+
+	// Handle token refresh separately
+	useEffect(() => {
+		if (socketRef.current && token) {
+			console.log('Token updated, reconnecting...');
+			disconnect();
+			// Small delay to prevent rapid reconnection
+			setTimeout(() => {
+				connect().catch(console.error);
+			}, 1000);
+		}
+	}, [token]);
 
 	return {
 		isConnected,

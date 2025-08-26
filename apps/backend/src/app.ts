@@ -8,6 +8,8 @@ import { GetMediaByIdUseCase } from './application/use-cases/get-media-by-id.use
 import { GetPublicRoomsUseCase } from './application/use-cases/get-public-rooms.usecase';
 import { GetUserMediaUseCase } from './application/use-cases/get-user-media.usecase';
 import { LoginUseCase } from './application/use-cases/login.usecase';
+import { LogoutUseCase } from './application/use-cases/logout.usecase';
+import { RefreshTokenUseCase } from './application/use-cases/refresh-token.usecase';
 import { UploadMediaUseCase } from './application/use-cases/upload-media.usecase';
 import { HTTP_STATUS } from './infrastructure/constants/http-status';
 import { BcryptPasswordService } from './infrastructure/crypto/bcrypt-password.service';
@@ -66,6 +68,8 @@ const loginUseCase = new LoginUseCase(
 	passwordService,
 	authService,
 );
+const refreshTokenUseCase = new RefreshTokenUseCase(tokenRepository, userRepository, authService);
+const logoutUseCase = new LogoutUseCase(tokenRepository, userRepository);
 const createRoomUseCase = new CreateRoomUseCase(roomRepository, loggingService);
 const getPublicRoomsUseCase = new GetPublicRoomsUseCase(roomRepository, loggingService);
 const uploadMediaUseCase = new UploadMediaUseCase(mediaRepository, s3UploadService, loggingService);
@@ -75,7 +79,12 @@ const deleteMediaUseCase = new DeleteMediaUseCase(mediaRepository, s3UploadServi
 
 // 4. Initialize controllers with use cases
 const userController = new UserController(createUserUseCase, userRepository, loggingService);
-const authController = new AuthController(loginUseCase, loggingService);
+const authController = new AuthController(
+	loginUseCase,
+	refreshTokenUseCase,
+	logoutUseCase,
+	loggingService,
+);
 const roomController = new RoomController(createRoomUseCase, getPublicRoomsUseCase, loggingService);
 const mediaController = new MediaController(
 	uploadMediaUseCase,
@@ -99,7 +108,7 @@ app.use(mongoSanitize());
 
 // Mount routes
 app.use('/api/v1/users', createUserRoutes(userController, authService));
-app.use('/api/v1/auth', createAuthRoutes(authController));
+app.use('/api/v1/auth', createAuthRoutes(authController, authService));
 app.use('/api/v1/rooms', createRoomRoutes(roomController, authService, loggingService));
 app.use('/api/v1/media', createMediaRoutes(mediaController, authService));
 

@@ -71,8 +71,8 @@ export class SocketService implements ISocketService {
 		const rateLimitMiddleware = createSocketRateLimitConfig(this.loggingService, {
 			points: 100, // 100 events per minute
 			duration: 60,
-			maxConnectionsPerIP: 5,
-			connectionWindowMs: 60000,
+			maxConnectionsPerIP: 20, // Increased from 5 to 20
+			connectionWindowMs: 30000, // Reduced from 60s to 30s
 		});
 		this.io.use(rateLimitMiddleware);
 

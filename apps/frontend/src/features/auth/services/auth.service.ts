@@ -1,5 +1,13 @@
+import { CONFIG } from '../../../config';
 import { ApiService } from '../../../services/api';
-import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../../../types';
+import {
+	AuthResponse,
+	LoginCredentials,
+	RefreshTokenResponse,
+	RegisterCredentials,
+	User,
+} from '../../../types';
+import { getStorageItem } from '../../../utils';
 
 export class AuthService {
 	private apiService: ApiService;
@@ -54,18 +62,43 @@ export class AuthService {
 		}
 	}
 
-	async logout(): Promise<void> {
+	async logout(): Promise<{ success: boolean; message: string; tokensRevoked: number }> {
 		try {
-			await this.apiService.post('/api/v1/auth/logout');
+			// The logout endpoint now requires authentication, so the access token
+			// will be automatically added by the API service interceptor
+			const response = await this.apiService.post<{
+				success: boolean;
+				message: string;
+				data: { tokensRevoked: number };
+			}>('/api/v1/auth/logout');
+
+			return {
+				success: response.success,
+				message: response.message,
+				tokensRevoked: response.data?.tokensRevoked || 0,
+			};
 		} catch (error) {
 			// Even if logout fails on backend, we should clear local storage
 			console.warn('Logout request failed, but clearing local storage');
+			throw new Error('Logout failed on server');
 		}
 	}
 
-	async refreshToken(): Promise<AuthResponse> {
+	async refreshToken(): Promise<RefreshTokenResponse> {
 		try {
-			const response = await this.apiService.post<AuthResponse>('/api/v1/auth/refresh-token');
+			// Get the current refresh token from storage
+			const currentRefreshToken = getStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY);
+
+			if (!currentRefreshToken) {
+				throw new Error('No refresh token available');
+			}
+
+			const response = await this.apiService.post<RefreshTokenResponse>(
+				'/api/v1/auth/refresh-token',
+				{
+					refreshToken: currentRefreshToken,
+				},
+			);
 			return response;
 		} catch (error) {
 			throw new Error('Token refresh failed');

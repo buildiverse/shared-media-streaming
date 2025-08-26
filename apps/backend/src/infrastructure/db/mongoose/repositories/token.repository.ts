@@ -71,9 +71,9 @@ export class TokenRepository implements ITokenRepository {
 		return !!result;
 	}
 
-	async revokeAllForUser(userId: string): Promise<boolean> {
+	async revokeAllForUser(userId: string): Promise<number> {
 		const result = await TokenModel.updateMany({ userId }, { isRevoked: true }).exec();
-		return result.modifiedCount > 0;
+		return result.modifiedCount || 0; // Return actual count of tokens revoked
 	}
 
 	async cleanupExpired(): Promise<number> {

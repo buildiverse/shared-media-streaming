@@ -13,6 +13,6 @@ export interface ITokenRepository {
 	findByTokenId(tokenId: string): Promise<RefreshToken | null>;
 	findByUserId(userId: string): Promise<RefreshToken[]>;
 	revoke(tokenId: string): Promise<boolean>;
-	revokeAllForUser(userId: string): Promise<boolean>;
+	revokeAllForUser(userId: string): Promise<number>; // Return count of tokens revoked
 	cleanupExpired(): Promise<number>;
 }
