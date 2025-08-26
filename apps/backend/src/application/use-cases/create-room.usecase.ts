@@ -1,113 +1,92 @@
 import { Room } from '../../domain/entities/room.entity';
+import { IRoomRepository } from '../../domain/repositories/iroom.repository';
 import { ILoggingService } from '../../domain/services/ilogging.service';
 
 export interface CreateRoomInput {
-	name: string;
-	description: string;
-	createdBy: string;
 	isPrivate: boolean;
-	maxUsers: number;
+	createdBy: string;
 }
 
 export interface CreateRoomResult {
 	success: boolean;
-	room: Room;
+	room?: Room;
 	error?: string;
 }
 
 export class CreateRoomUseCase {
-	constructor(private loggingService: ILoggingService) {}
+	constructor(
+		private roomRepository: IRoomRepository,
+		private loggingService: ILoggingService,
+	) {}
 
 	async execute(input: CreateRoomInput): Promise<CreateRoomResult> {
-		const { name, description, createdBy, isPrivate, maxUsers } = input;
+		const { isPrivate, createdBy } = input;
 
 		try {
-			// Validate input
-			if (!Room.validateName(name)) {
-				return {
-					success: false,
-					room: null as any,
-					error: 'Invalid room name. Must be between 3 and 50 characters.',
-				};
-			}
-
-			if (!Room.validateDescription(description)) {
-				return {
-					success: false,
-					room: null as any,
-					error: 'Invalid room description. Must be 500 characters or less.',
-				};
-			}
-
-			if (!Room.validateMaxUsers(maxUsers)) {
-				return {
-					success: false,
-					room: null as any,
-					error: 'Invalid max users. Must be between 2 and 100.',
-				};
-			}
-
-			// Generate unique room ID and room code
-			const roomId = this.generateRoomId();
-			const roomCode = this.generateRoomCode();
+			// Generate a unique 8-character room code
+			const roomCode = await this.generateUniqueRoomCode();
 
 			// Create room entity
+			const roomData = Room.create(roomCode, isPrivate, createdBy);
 			const room = new Room(
-				roomId,
-				roomCode,
-				name,
-				description,
-				createdBy,
-				isPrivate,
-				maxUsers,
+				'', // ID will be set by repository
+				roomData.roomCode,
+				roomData.isPrivate,
+				roomData.createdBy,
 				new Date(),
 				new Date(),
-				[createdBy], // Creator is automatically added as first participant
-				[], // Empty media queue initially
 			);
 
-			// TODO: Save room to repository
-			// await this.roomRepository.save(room);
+			// Save to repository
+			const savedRoom = await this.roomRepository.save(room);
 
 			this.loggingService.info('Room created successfully', {
-				roomId: room.id,
-				roomCode: room.roomCode,
-				roomName: room.name,
+				roomId: savedRoom.id,
+				roomCode: savedRoom.roomCode,
 				createdBy,
 				isPrivate,
-				maxUsers,
 			});
 
 			return {
 				success: true,
-				room,
+				room: savedRoom,
 			};
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
 			this.loggingService.error('Failed to create room', {
-				error: error instanceof Error ? error.message : 'Unknown error',
+				error: errorMessage,
 				input,
 			});
 
 			return {
 				success: false,
-				room: null as any,
 				error: 'Failed to create room. Please try again.',
 			};
 		}
 	}
 
-	private generateRoomId(): string {
-		// Generate a unique room ID (in production, this would use a proper ID generator)
-		return `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-	}
-
-	private generateRoomCode(): string {
-		// Generate a unique 8-character alphanumeric room code
+	private async generateUniqueRoomCode(): Promise<string> {
 		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-		let result = '';
-		for (let i = 0; i < 8; i++) {
-			result += chars.charAt(Math.floor(Math.random() * chars.length));
+		let attempts = 0;
+		const maxAttempts = 100;
+
+		while (attempts < maxAttempts) {
+			// Generate random 8-character code
+			let code = '';
+			for (let i = 0; i < 8; i++) {
+				code += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+
+			// Check if code already exists
+			const exists = await this.roomRepository.roomCodeExists(code);
+			if (!exists) {
+				return code;
+			}
+
+			attempts++;
 		}
-		return result;
+
+		throw new Error('Unable to generate unique room code after maximum attempts');
 	}
 }

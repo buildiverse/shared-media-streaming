@@ -74,6 +74,7 @@ export const buildApiUrl = (endpoint: string): string => {
 
 export const getAuthHeaders = (): Record<string, string> => {
 	const token = getStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
+	console.log('getAuthHeaders: Token found:', !!token, 'Token length:', token?.length);
 	return token ? { Authorization: `Bearer ${token}` } : {};
 };
 

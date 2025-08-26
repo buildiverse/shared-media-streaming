@@ -1,59 +1,79 @@
 import { Request, Response } from 'express';
+import { CreateRoomUseCase } from '../../../application/use-cases/create-room.usecase';
+import { GetPublicRoomsUseCase } from '../../../application/use-cases/get-public-rooms.usecase';
+import { Room } from '../../../domain/entities/room.entity';
 import { ILoggingService } from '../../../domain/services/ilogging.service';
-import { IRoomService } from '../../../domain/services/iroom.service';
+import {
+	createRoomSchema,
+	getPublicRoomsSchema,
+	getRoomByCodeSchema,
+} from '../validators/room.validation';
 
 export class RoomController {
 	constructor(
-		private readonly roomService: IRoomService,
-		private readonly loggingService: ILoggingService,
+		private createRoomUseCase: CreateRoomUseCase,
+		private getPublicRoomsUseCase: GetPublicRoomsUseCase,
+		private loggingService: ILoggingService,
 	) {}
 
 	async createRoom(req: Request, res: Response): Promise<void> {
 		try {
-			const { name, description, isPrivate, maxUsers } = req.body;
-			const userId = req.user?.userId; // From auth middleware
-
-			if (!userId) {
-				res.status(401).json({ error: 'Unauthorized' });
-				return;
-			}
-
-			if (!name || typeof name !== 'string') {
-				res.status(400).json({ error: 'Room name is required and must be a string' });
-				return;
-			}
-
-			const result = await this.roomService.createRoom({
-				name,
-				description: description || '',
-				createdBy: userId,
-				isPrivate: Boolean(isPrivate),
-				maxUsers: maxUsers || 10,
-			});
-
-			if (result.success) {
-				res.status(201).json({
-					success: true,
-					room: {
-						id: result.room.id,
-						roomCode: result.room.roomCode,
-						name: result.room.name,
-						description: result.room.description,
-						isPrivate: result.room.isPrivate,
-						maxUsers: result.room.maxUsers,
-						createdAt: result.room.createdAt,
-					},
+			// Validate request body
+			const validation = createRoomSchema.safeParse(req.body);
+			if (!validation.success) {
+				this.loggingService.warn('Invalid room creation request', {
+					errors: validation.error.issues,
+					body: req.body,
+					userId: req.user?.userId,
 				});
-			} else {
+
 				res.status(400).json({
 					success: false,
-					error: result.error,
+					error: 'Invalid request data',
+					details: validation.error.issues,
+				});
+				return;
+			}
+
+			const { isPrivate } = validation.data;
+			const userId = req.user?.userId;
+
+			if (!userId) {
+				res.status(401).json({
+					success: false,
+					error: 'User not authenticated',
+				});
+				return;
+			}
+
+			// Execute use case
+			const result = await this.createRoomUseCase.execute({
+				isPrivate,
+				createdBy: userId,
+			});
+
+			if (result.success && result.room) {
+				this.loggingService.info('Room created via HTTP', {
+					roomId: result.room.id,
+					roomCode: result.room.roomCode,
+					userId,
+					isPrivate,
+				});
+
+				res.status(201).json({
+					success: true,
+					room: result.room.toJSON(),
+				});
+			} else {
+				res.status(500).json({
+					success: false,
+					error: result.error || 'Failed to create room',
 				});
 			}
 		} catch (error) {
-			this.loggingService.error('RoomController: Error creating room', {
+			this.loggingService.error('Unexpected error in createRoom', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				requestBody: req.body,
+				userId: req.user?.userId,
 			});
 
 			res.status(500).json({
@@ -65,38 +85,46 @@ export class RoomController {
 
 	async getPublicRooms(req: Request, res: Response): Promise<void> {
 		try {
-			const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-			const offset = req.query.offset ? parseInt(req.query.offset as string) : undefined;
-
-			const result = await this.roomService.getPublicRooms({
-				limit,
-				offset,
-			});
-
-			if (result.success) {
-				res.status(200).json({
-					success: true,
-					rooms: result.rooms.map((room) => ({
-						id: room.id,
-						roomCode: room.roomCode,
-						name: room.name,
-						description: room.description,
-						participantCount: room.participantCount,
-						maxUsers: room.maxUsers,
-						createdAt: room.createdAt,
-					})),
-					totalCount: result.totalCount,
+			// Validate query parameters
+			const validation = getPublicRoomsSchema.safeParse(req.query);
+			if (!validation.success) {
+				this.loggingService.warn('Invalid get public rooms request', {
+					errors: validation.error.issues,
+					query: req.query,
 				});
-			} else {
+
 				res.status(400).json({
 					success: false,
-					error: result.error,
+					error: 'Invalid query parameters',
+					details: validation.error.issues,
+				});
+				return;
+			}
+
+			const { limit, offset } = validation.data;
+
+			// Execute use case
+			const result = await this.getPublicRoomsUseCase.execute({ limit, offset });
+
+			if (result.success && result.rooms) {
+				res.status(200).json({
+					success: true,
+					rooms: result.rooms.map((room: Room) => room.toJSON()),
+					pagination: {
+						limit,
+						offset,
+						total: result.total,
+					},
+				});
+			} else {
+				res.status(500).json({
+					success: false,
+					error: result.error || 'Failed to fetch public rooms',
 				});
 			}
 		} catch (error) {
-			this.loggingService.error('RoomController: Error fetching public rooms', {
+			this.loggingService.error('Unexpected error in getPublicRooms', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				query: req.query,
 			});
 
 			res.status(500).json({
@@ -108,55 +136,32 @@ export class RoomController {
 
 	async getRoomByCode(req: Request, res: Response): Promise<void> {
 		try {
-			const { roomCode } = req.params;
-			const userId = req.user?.userId; // From auth middleware
-
-			if (!userId) {
-				res.status(401).json({ error: 'Unauthorized' });
-				return;
-			}
-
-			if (!roomCode || typeof roomCode !== 'string') {
-				res.status(400).json({ error: 'Room code is required' });
-				return;
-			}
-
-			const result = await this.roomService.getRoomByCode({
-				roomCode,
-			});
-
-			if (result.success && result.room) {
-				// Check if user is in the room
-				const isUserInRoom = await this.roomService.isUserInRoom(roomCode, userId);
-				const isUserHost = await this.roomService.isUserHost(roomCode, userId);
-
-				res.status(200).json({
-					success: true,
-					room: {
-						id: result.room.id,
-						roomCode: result.room.roomCode,
-						name: result.room.name,
-						description: result.room.description,
-						isPrivate: result.room.isPrivate,
-						maxUsers: result.room.maxUsers,
-						participantCount: result.room.participantCount,
-						createdAt: result.room.createdAt,
-					},
-					userInfo: {
-						isInRoom: isUserInRoom,
-						isHost: isUserHost,
-					},
+			// Validate path parameters
+			const validation = getRoomByCodeSchema.safeParse(req.params);
+			if (!validation.success) {
+				this.loggingService.error('Invalid get room by code request', {
+					errors: validation.error.issues,
+					params: req.params,
 				});
-			} else {
-				res.status(404).json({
+
+				res.status(400).json({
 					success: false,
-					error: result.error || 'Room not found',
+					error: 'Invalid room code',
+					details: validation.error.issues,
 				});
+				return;
 			}
+
+			// TODO: Implement get room by code use case
+			// const { roomCode } = validation.data; // Will be used when implementing
+			res.status(501).json({
+				success: false,
+				error: 'Not implemented yet',
+			});
 		} catch (error) {
-			this.loggingService.error('RoomController: Error fetching room by code', {
+			this.loggingService.error('Unexpected error in getRoomByCode', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				params: req.params,
+				roomCode: req.params.roomCode,
 			});
 
 			res.status(500).json({

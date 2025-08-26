@@ -4,6 +4,8 @@ import path from 'node:path';
 
 import app from './app';
 import { connectDB } from './infrastructure/config/db';
+import { createServer } from 'http';
+import { socketService } from './app';
 
 // Load environment variables based on NODE_ENV
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -26,8 +28,17 @@ const port = process.env.PORT || 3000;
 async function startServer() {
 	try {
 		await connectDB();
-		app.listen(port, () => {
-			console.log(`application running on port ${port}`);
+		
+		// Create HTTP server from Express app
+		const httpServer = createServer(app);
+		
+		// Initialize socket service with HTTP server
+		socketService.initialize(httpServer);
+		
+		// Start HTTP server (which will also start WebSocket server)
+		httpServer.listen(port, () => {
+			console.log(`🚀 HTTP server running on port ${port}`);
+			console.log(`🔌 WebSocket server running on port ${port}`);
 		});
 	} catch (error) {
 		console.error('failed to start the server', error);

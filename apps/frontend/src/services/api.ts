@@ -44,6 +44,7 @@ class ApiService {
 
 				if (error.response?.status === 401 && !originalRequest._retry) {
 					originalRequest._retry = true;
+					console.log('ApiService: 401 error, attempting token refresh...');
 
 					try {
 						const refreshToken = localStorage.getItem(STORAGE_CONFIG.STORAGE.REFRESH_TOKEN_KEY);
@@ -55,13 +56,19 @@ class ApiService {
 							originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
 							return this.api(originalRequest);
+						} else {
+							console.log('ApiService: No refresh token, clearing storage');
+							// No refresh token, clear storage but don't redirect
+							removeStorageItem(STORAGE_CONFIG.STORAGE.AUTH_TOKEN_KEY);
+							removeStorageItem(STORAGE_CONFIG.STORAGE.REFRESH_TOKEN_KEY);
+							removeStorageItem(STORAGE_CONFIG.STORAGE.USER_KEY);
 						}
 					} catch (refreshError) {
-						// Refresh failed, redirect to login
+						console.error('ApiService: Token refresh failed:', refreshError);
+						// Refresh failed, clear storage but don't redirect
 						removeStorageItem(STORAGE_CONFIG.STORAGE.AUTH_TOKEN_KEY);
 						removeStorageItem(STORAGE_CONFIG.STORAGE.REFRESH_TOKEN_KEY);
 						removeStorageItem(STORAGE_CONFIG.STORAGE.USER_KEY);
-						window.location.href = '/login';
 					}
 				}
 

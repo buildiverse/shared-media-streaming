@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CONFIG } from '../../../config';
 import { getStorageItem, removeStorageItem, setStorageItem } from '../../../utils';
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../../types';
@@ -10,22 +10,24 @@ export const useAuth = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-	const authService = new AuthService();
+	// Create authService once, not on every render
+	const authService = useMemo(() => new AuthService(), []);
 
 	// Check if user is already logged in on mount
 	useEffect(() => {
 		const checkAuthStatus = async () => {
 			try {
 				const token = getStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
-				if (token) {
-					// Validate token and get current user
-					const isValid = await authService.validateToken();
-					if (isValid) {
-						const currentUser = await authService.getCurrentUser();
-						setUser(currentUser);
+				const storedUser = getStorageItem(CONFIG.STORAGE.USER_KEY);
+
+				if (token && storedUser) {
+					try {
+						const user = JSON.parse(storedUser);
+						setUser(user);
 						setIsAuthenticated(true);
-					} else {
-						// Token is invalid, clear storage
+					} catch (parseError) {
+						console.error('Failed to parse stored user:', parseError);
+						// Clear invalid data
 						removeStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
 						removeStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY);
 						removeStorageItem(CONFIG.STORAGE.USER_KEY);
@@ -33,10 +35,6 @@ export const useAuth = () => {
 				}
 			} catch (error) {
 				console.error('Auth check failed:', error);
-				// Clear any invalid tokens
-				removeStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
-				removeStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY);
-				removeStorageItem(CONFIG.STORAGE.USER_KEY);
 			} finally {
 				setIsLoading(false);
 			}
@@ -57,6 +55,7 @@ export const useAuth = () => {
 			setStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY, response.refreshToken);
 			setStorageItem(CONFIG.STORAGE.USER_KEY, JSON.stringify(response.user));
 
+			// Set state
 			setUser(response.user);
 			setIsAuthenticated(true);
 
@@ -109,6 +108,8 @@ export const useAuth = () => {
 			setUser(null);
 			setIsAuthenticated(false);
 			setError(null);
+
+			// Don't navigate here - let the component handle navigation
 		}
 	}, []);
 
@@ -132,8 +133,14 @@ export const useAuth = () => {
 		setError(null);
 	}, []);
 
+	// Get current token from storage
+	const token = useMemo(() => {
+		return getStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
+	}, []);
+
 	return {
 		user,
+		token,
 		isLoading,
 		error,
 		isAuthenticated,

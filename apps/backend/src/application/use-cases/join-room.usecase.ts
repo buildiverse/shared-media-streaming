@@ -1,15 +1,13 @@
-import { Room } from '../../domain/entities/room.entity';
 import { ILoggingService } from '../../domain/services/ilogging.service';
 
 export interface JoinRoomInput {
 	roomCode: string; // 8-character alphanumeric code
 	userId: string;
-	socketId: string;
 }
 
 export interface JoinRoomResult {
 	success: boolean;
-	room: any; // Will be Room entity
+	roomCode: string;
 	error?: string;
 }
 
@@ -17,81 +15,40 @@ export class JoinRoomUseCase {
 	constructor(private loggingService: ILoggingService) {}
 
 	async execute(input: JoinRoomInput): Promise<JoinRoomResult> {
-		const { roomCode, userId, socketId } = input;
+		const { roomCode, userId } = input;
 
 		try {
-			// TODO: Find room by code from repository
+			// TODO: Find room by code from repository to validate it exists
 			// const room = await this.roomRepository.findByRoomCode(roomCode);
 
-			// For now, return mock data
-			const mockRoom = new Room(
-				'room_1',
-				roomCode,
-				'Sample Room',
-				'A sample room for testing',
-				'host123',
-				false, // public
-				10,
-				new Date(),
-				new Date(),
-				['host123'],
-				[],
-			);
-
-			if (!mockRoom) {
+			// For now, just validate the room code format
+			if (!roomCode || roomCode.length !== 8 || !/^[A-Z0-9]+$/.test(roomCode)) {
 				return {
 					success: false,
-					room: null,
-					error: 'Room not found with the provided code.',
+					roomCode: '',
+					error: 'Invalid room code format.',
 				};
 			}
 
-			// Check if user is already in the room
-			if (mockRoom.isParticipant(userId)) {
-				return {
-					success: false,
-					room: null,
-					error: 'You are already in this room.',
-				};
-			}
-
-			// Check if room is full
-			if (mockRoom.isFull) {
-				return {
-					success: false,
-					room: null,
-					error: 'Room is at maximum capacity.',
-				};
-			}
-
-			// Add user to room
-			const updatedRoom = mockRoom.addParticipant(userId);
-
-			// TODO: Save updated room to repository
-			// await this.roomRepository.save(updatedRoom);
-
-			this.loggingService.info('User joined room by code', {
+			this.loggingService.info('Room join validation successful', {
 				userId,
-				socketId,
-				roomId: updatedRoom.id,
-				roomCode: updatedRoom.roomCode,
-				participantCount: updatedRoom.participantCount,
+				roomCode,
 			});
 
 			return {
 				success: true,
-				room: updatedRoom,
+				roomCode,
 			};
 		} catch (error) {
-			this.loggingService.error('Failed to join room', {
+			this.loggingService.error('Failed to validate room join', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				input,
 			});
 
 			return {
 				success: false,
-				room: null,
-				error: 'Failed to join room. Please try again.',
+				roomCode: '',
+				error: 'Failed to validate room join. Please try again.',
 			};
 		}
 	}

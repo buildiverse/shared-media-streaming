@@ -55,26 +55,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout, className = '' }
 							</Link>
 						</li>
 						{user && (
-							<>
-								<li className='navbar__nav-item'>
-									<Link
-										to='/rooms'
-										className={`navbar__nav-link ${isActive('/rooms') ? 'navbar__nav-link--active' : ''}`}
-										aria-current={isActive('/rooms') ? 'page' : undefined}
-									>
-										Rooms
-									</Link>
-								</li>
-								<li className='navbar__nav-item'>
-									<Link
-										to='/upload'
-										className={`navbar__nav-link ${isActive('/upload') ? 'navbar__nav-link--active' : ''}`}
-										aria-current={isActive('/upload') ? 'page' : undefined}
-									>
-										Upload
-									</Link>
-								</li>
-							</>
+							<li className='navbar__nav-item'>
+								<Link
+									to='/upload'
+									className={`navbar__nav-link ${isActive('/upload') ? 'navbar__nav-link--active' : ''}`}
+									aria-current={isActive('/upload') ? 'page' : undefined}
+								>
+									Upload
+								</Link>
+							</li>
 						)}
 					</ul>
 				</div>

@@ -11,7 +11,7 @@ export const LoginPage: React.FC = () => {
 	const handleLogin = async (credentials: { username: string; password: string }) => {
 		try {
 			await login(credentials);
-			navigate('/dashboard');
+			navigate('/');
 		} catch (error) {
 			// Error is handled by useAuth hook
 			console.error('Login failed:', error);

@@ -15,7 +15,7 @@ export const RegisterPage: React.FC = () => {
 	}) => {
 		try {
 			await register(credentials);
-			navigate('/dashboard');
+			navigate('/');
 		} catch (error) {
 			// Error is handled by useAuth hook
 			console.error('Registration failed:', error);

@@ -23,7 +23,7 @@ export const createMediaSyncRoutes = (mediaSyncController: MediaSyncController) 
 				emitValidationError(socket, 'join-room', validation.error.issues);
 				return;
 			}
-			await mediaSyncController.handleJoinRoom(socket, validation.data.roomId);
+			await mediaSyncController.handleJoinRoom(socket, validation.data.roomCode);
 		});
 
 		socket.on('leave-room', (data: LeaveRoomInput) => {
@@ -32,7 +32,7 @@ export const createMediaSyncRoutes = (mediaSyncController: MediaSyncController) 
 				emitValidationError(socket, 'leave-room', validation.error.issues);
 				return;
 			}
-			mediaSyncController.handleLeaveRoom(socket, validation.data.roomId);
+			mediaSyncController.handleLeaveRoom(socket, validation.data.roomCode);
 		});
 
 		socket.on('media-play', (data: MediaPlayInput) => {

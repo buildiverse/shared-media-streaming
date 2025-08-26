@@ -4,9 +4,11 @@ import { JoinRoomUseCase } from '../../application/use-cases/join-room.usecase';
 import { SendChatMessageUseCase } from '../../application/use-cases/send-chat-message.usecase';
 import { IAuthService } from '../../domain/services/iauth.service';
 import { ILoggingService } from '../../domain/services/ilogging.service';
+import { IRoomStateService } from '../../domain/services/iroom-state.service';
 import { ISocketService } from '../../domain/services/isocket.service';
 import { ChatController } from '../../interface/socket/controllers/chat.controller';
 import { MediaSyncController } from '../../interface/socket/controllers/media-sync.controller';
+import { SocketRoomController } from '../../interface/socket/controllers/room.controller';
 import {
 	AuthenticatedSocket,
 	socketAuthMiddleware,
@@ -15,6 +17,7 @@ import { createSocketRateLimitConfig } from '../../interface/socket/middlewares/
 import { createSocketErrorHandler } from '../../interface/socket/middlewares/error-handler.middleware';
 import { createChatRoutes } from '../../interface/socket/routes/chat.routes';
 import { createMediaSyncRoutes } from '../../interface/socket/routes/media-sync.routes';
+import { createSocketRoomRoutes } from '../../interface/socket/routes/room.routes';
 
 export class SocketService implements ISocketService {
 	private io: SocketIOServer | null = null;
@@ -22,18 +25,31 @@ export class SocketService implements ISocketService {
 	private mediaSyncController: MediaSyncController;
 	private chatController: ChatController;
 	private authService: IAuthService;
+	private socketRoomController: SocketRoomController;
 
-	constructor(loggingService: ILoggingService, authService: IAuthService) {
+	constructor(
+		loggingService: ILoggingService,
+		authService: IAuthService,
+		roomStateService: IRoomStateService,
+	) {
 		this.loggingService = loggingService;
 		this.authService = authService;
 
 		// Initialize use cases
-		const joinRoomUseCase = new JoinRoomUseCase(loggingService);
 		const sendChatMessageUseCase = new SendChatMessageUseCase(loggingService);
 
 		// Initialize controllers with use cases
-		this.mediaSyncController = new MediaSyncController(loggingService, joinRoomUseCase);
+		this.mediaSyncController = new MediaSyncController(loggingService);
 		this.chatController = new ChatController(loggingService, sendChatMessageUseCase);
+
+		// Initialize room use case
+		const joinRoomUseCase = new JoinRoomUseCase(loggingService);
+
+		this.socketRoomController = new SocketRoomController(
+			joinRoomUseCase,
+			roomStateService,
+			loggingService,
+		);
 	}
 
 	initialize(httpServer: HTTPServer): void {
@@ -76,10 +92,12 @@ export class SocketService implements ISocketService {
 			// Set up routes
 			const mediaSyncRoutes = createMediaSyncRoutes(this.mediaSyncController);
 			const chatRoutes = createChatRoutes(this.chatController);
+			const roomRoutes = createSocketRoomRoutes(this.socketRoomController);
 
 			// Apply routes to socket
 			mediaSyncRoutes(socket);
 			chatRoutes(socket);
+			roomRoutes(socket);
 
 			// Set up error handling for this socket
 			socket.on('error', (error: Error) => {

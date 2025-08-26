@@ -2,30 +2,45 @@ import { z } from 'zod';
 
 // Join room event
 export const joinRoomSchema = z.object({
-	roomId: z.string().min(1, 'Room ID is required'),
+	roomCode: z
+		.string()
+		.length(8, 'Room code must be 8 characters')
+		.regex(/^[A-Z0-9]+$/, 'Room code must be alphanumeric'),
 	mediaId: z.string().min(1, 'Media ID is required').optional(),
 });
 
 // Leave room event
 export const leaveRoomSchema = z.object({
-	roomId: z.string().min(1, 'Room ID is required'),
+	roomCode: z
+		.string()
+		.length(8, 'Room code must be 8 characters')
+		.regex(/^[A-Z0-9]+$/, 'Room code must be alphanumeric'),
 });
 
 // Media play event
 export const mediaPlaySchema = z.object({
-	roomId: z.string().min(1, 'Room ID is required'),
+	roomCode: z
+		.string()
+		.length(8, 'Room code must be 8 characters')
+		.regex(/^[A-Z0-9]+$/, 'Room code must be alphanumeric'),
 	currentTime: z.number().min(0, 'Current time must be positive'),
 });
 
 // Media pause event
 export const mediaPauseSchema = z.object({
-	roomId: z.string().min(1, 'Room ID is required'),
+	roomCode: z
+		.string()
+		.length(8, 'Room code must be 8 characters')
+		.regex(/^[A-Z0-9]+$/, 'Room code must be alphanumeric'),
 	currentTime: z.number().min(0, 'Current time must be positive'),
 });
 
 // Media seek event
 export const mediaSeekSchema = z.object({
-	roomId: z.string().min(1, 'Room ID is required'),
+	roomCode: z
+		.string()
+		.length(8, 'Room code must be 8 characters')
+		.regex(/^[A-Z0-9]+$/, 'Room code must be alphanumeric'),
 	currentTime: z.number().min(0, 'Current time must be positive'),
 });
 

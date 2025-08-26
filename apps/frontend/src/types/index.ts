@@ -62,36 +62,6 @@ export interface AuthResponse {
 	user: User;
 }
 
-export interface Room {
-	id: string;
-	name: string;
-	description?: string;
-	createdBy: string;
-	createdAt: string;
-	isPrivate: boolean;
-	maxUsers: number;
-	currentUsers: number;
-	mediaQueue: Media[];
-}
-
-export interface RoomMessage {
-	id: string;
-	roomId: string;
-	userId: string;
-	username: string;
-	message: string;
-	timestamp: string;
-	type: 'text' | 'system' | 'media';
-}
-
-export interface RoomUser {
-	userId: string;
-	username: string;
-	joinedAt: string;
-	isHost: boolean;
-	isActive: boolean;
-}
-
 // Backend API endpoints
 export const API_ENDPOINTS = {
 	AUTH: {
