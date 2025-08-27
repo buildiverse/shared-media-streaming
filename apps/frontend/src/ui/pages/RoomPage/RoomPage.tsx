@@ -78,7 +78,7 @@ export const RoomPage: React.FC = () => {
 
 		// Set loading to false once connected
 		if (isConnected) {
-			console.log('Connected, setting loading to false');
+			console.log('Connected, setting loading to falsse');
 			setIsLoading(false);
 		}
 	}, [roomCode, user, navigate, isConnected]);
