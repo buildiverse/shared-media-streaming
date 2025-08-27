@@ -32,6 +32,10 @@ interface UseRoomSocketReturn {
 	removeFromQueue: (queueItemId: string) => void;
 	reorderQueue: (queueItemId: string, newPosition: number) => void;
 	clearQueue: () => void;
+	// Media sync methods
+	mediaPlay: (roomCode: string, currentTime: number) => void;
+	mediaPause: (roomCode: string, currentTime: number) => void;
+	mediaSeek: (roomCode: string, currentTime: number) => void;
 }
 
 export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
@@ -283,6 +287,25 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				console.log('Queue updated:', data);
 				setMediaQueue(data.queue || []);
 			});
+
+			// Media sync events
+			socket.on('media-play', (data: any) => {
+				console.log('Media play event received:', data);
+				// Dispatch custom event for the RoomPage component
+				window.dispatchEvent(new CustomEvent('media-play', { detail: data }));
+			});
+
+			socket.on('media-pause', (data: any) => {
+				console.log('Media pause event received:', data);
+				// Dispatch custom event for the RoomPage component
+				window.dispatchEvent(new CustomEvent('media-pause', { detail: data }));
+			});
+
+			socket.on('media-seek', (data: any) => {
+				console.log('Media seek event received:', data);
+				// Dispatch custom event for the RoomPage component
+				window.dispatchEvent(new CustomEvent('media-seek', { detail: data }));
+			});
 		} catch (error) {
 			console.error('Failed to connect to socket:', error);
 			setError('Failed to connect to room');
@@ -392,6 +415,52 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 		});
 	}, [roomCode, isConnected, isJoined]);
 
+	// Media sync methods
+	const mediaPlay = useCallback(
+		(roomCode: string, currentTime: number) => {
+			console.log('mediaPlay called:', { roomCode, currentTime, isConnected, isJoined });
+			if (!socketRef.current || !isConnected || !isJoined) {
+				console.log('mediaPlay: conditions not met, returning early');
+				setError('Not in a room');
+				return;
+			}
+
+			console.log('mediaPlay: emitting socket event');
+			socketRef.current.emit('media-play', { roomCode, currentTime });
+		},
+		[isConnected, isJoined],
+	);
+
+	const mediaPause = useCallback(
+		(roomCode: string, currentTime: number) => {
+			console.log('mediaPause called:', { roomCode, currentTime, isConnected, isJoined });
+			if (!socketRef.current || !isConnected || !isJoined) {
+				console.log('mediaPause: conditions not met, returning early');
+				setError('Not in a room');
+				return;
+			}
+
+			console.log('mediaPause: emitting socket event');
+			socketRef.current.emit('media-pause', { roomCode, currentTime });
+		},
+		[isConnected, isJoined],
+	);
+
+	const mediaSeek = useCallback(
+		(roomCode: string, currentTime: number) => {
+			console.log('mediaSeek called:', { roomCode, currentTime, isConnected, isJoined });
+			if (!socketRef.current || !isConnected || !isJoined) {
+				console.log('mediaSeek: conditions not met, returning early');
+				setError('Not in a room');
+				return;
+			}
+
+			console.log('mediaSeek: emitting socket event');
+			socketRef.current.emit('media-seek', { roomCode, currentTime });
+		},
+		[isConnected, isJoined],
+	);
+
 	// Connect on mount
 	useEffect(() => {
 		console.log('useRoomSocket useEffect:', { roomCode, user: !!user });
@@ -447,5 +516,8 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 		removeFromQueue,
 		reorderQueue,
 		clearQueue,
+		mediaPlay,
+		mediaPause,
+		mediaSeek,
 	};
 };

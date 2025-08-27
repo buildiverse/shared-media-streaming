@@ -30,6 +30,7 @@ export const RoomPage: React.FC = () => {
 	const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [currentTime, setCurrentTime] = useState(0);
+	const [isLocalAction, setIsLocalAction] = useState(false);
 	const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
 	// Use the media hook to fetch user's media
@@ -48,6 +49,9 @@ export const RoomPage: React.FC = () => {
 		addToQueue: socketAddToQueue,
 		removeFromQueue: socketRemoveFromQueue,
 		clearQueue: socketClearQueue,
+		mediaPlay: socketMediaPlay,
+		mediaPause: socketMediaPause,
+		mediaSeek: socketMediaSeek,
 	} = useRoomSocket(roomCode || '');
 
 	useEffect(() => {
@@ -101,6 +105,81 @@ export const RoomPage: React.FC = () => {
 			});
 		}
 	}, [socketMediaQueue]);
+
+	// Handle incoming media sync events
+	useEffect(() => {
+		if (!isConnected || !isJoined) return;
+
+		// Create event handlers for media sync events
+		const handleMediaPlay = (event: CustomEvent) => {
+			const data = event.detail;
+			console.log('Media play event received:', data);
+
+			// Ignore if this is our own action
+			if (isLocalAction) return;
+
+			setIsLocalAction(true);
+			setIsPlaying(true);
+			setCurrentTime(data.currentTime);
+
+			// Sync media element
+			if (mediaRef.current) {
+				mediaRef.current.currentTime = data.currentTime;
+				mediaRef.current.play().catch(console.error);
+			}
+
+			setTimeout(() => setIsLocalAction(false), 100);
+		};
+
+		const handleMediaPause = (event: CustomEvent) => {
+			const data = event.detail;
+			console.log('Media pause event received:', data);
+
+			// Ignore if this is our own action
+			if (isLocalAction) return;
+
+			setIsLocalAction(true);
+			setIsPlaying(false);
+			setCurrentTime(data.currentTime);
+
+			// Sync media element
+			if (mediaRef.current) {
+				mediaRef.current.currentTime = data.currentTime;
+				mediaRef.current.pause();
+			}
+
+			setTimeout(() => setIsLocalAction(false), 100);
+		};
+
+		const handleMediaSeek = (event: CustomEvent) => {
+			const data = event.detail;
+			console.log('Media seek event received:', data);
+
+			// Ignore if this is our own action
+			if (isLocalAction) return;
+
+			setIsLocalAction(true);
+			setCurrentTime(data.currentTime);
+
+			// Sync media element
+			if (mediaRef.current) {
+				mediaRef.current.currentTime = data.currentTime;
+			}
+
+			setTimeout(() => setIsLocalAction(false), 100);
+		};
+
+		// Add event listeners
+		window.addEventListener('media-play', handleMediaPlay as EventListener);
+		window.addEventListener('media-pause', handleMediaPause as EventListener);
+		window.addEventListener('media-seek', handleMediaSeek as EventListener);
+
+		return () => {
+			window.removeEventListener('media-play', handleMediaPlay as EventListener);
+			window.removeEventListener('media-pause', handleMediaPause as EventListener);
+			window.removeEventListener('media-seek', handleMediaSeek as EventListener);
+		};
+	}, [isConnected, isJoined, isLocalAction]);
 
 	const handleSendMessage = () => {
 		if (!newMessage.trim()) return;
@@ -446,8 +525,24 @@ export const RoomPage: React.FC = () => {
 											borderRadius: '8px',
 										}}
 										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-										onPlay={() => setIsPlaying(true)}
-										onPause={() => setIsPlaying(false)}
+										onPlay={(e) => {
+											console.log('Video play event triggered by user:', user?.username);
+											setIsPlaying(true);
+											// Emit socket event to sync with other users
+											if (!isLocalAction) {
+												console.log('Emitting video play socket event from user:', user?.username);
+												socketMediaPlay(roomCode || '', e.currentTarget.currentTime);
+											}
+										}}
+										onPause={(e) => {
+											console.log('Video pause event triggered by user:', user?.username);
+											setIsPlaying(false);
+											// Emit socket event to sync with other users
+											if (!isLocalAction) {
+												console.log('Emitting video pause socket event from user:', user?.username);
+												socketMediaPause(roomCode || '', e.currentTarget.currentTime);
+											}
+										}}
 									>
 										<source
 											src={socketMediaQueue[0].url}
@@ -465,8 +560,24 @@ export const RoomPage: React.FC = () => {
 											borderRadius: '8px',
 										}}
 										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-										onPlay={() => setIsPlaying(true)}
-										onPause={() => setIsPlaying(false)}
+										onPlay={(e) => {
+											console.log('Audio play event triggered by user:', user?.username);
+											setIsPlaying(true);
+											// Emit socket event to sync with other users
+											if (!isLocalAction) {
+												console.log('Emitting audio play socket event from user:', user?.username);
+												socketMediaPlay(roomCode || '', e.currentTarget.currentTime);
+											}
+										}}
+										onPause={(e) => {
+											console.log('Audio pause event triggered by user:', user?.username);
+											setIsPlaying(false);
+											// Emit socket event to sync with other users
+											if (!isLocalAction) {
+												console.log('Emitting audio pause socket event from user:', user?.username);
+												socketMediaPause(roomCode || '', e.currentTarget.currentTime);
+											}
+										}}
 									>
 										<source
 											src={socketMediaQueue[0].url}
