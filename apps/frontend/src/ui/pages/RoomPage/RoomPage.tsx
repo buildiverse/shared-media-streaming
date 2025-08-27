@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { useMedia } from '../../../features/media/hooks/useMedia';
 import { useRoomSocket } from '../../../features/rooms/hooks/useRoomSocket';
+import { Media } from '../../../types';
 import { Button } from '../../atoms/Button';
 
 interface User {
@@ -25,15 +27,27 @@ export const RoomPage: React.FC = () => {
 
 	const [newMessage, setNewMessage] = useState('');
 	const [isLoading, setIsLoading] = useState(true);
+	const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
+	const [isPlaying, setIsPlaying] = useState(false);
+	const [currentTime, setCurrentTime] = useState(0);
+	const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
+
+	// Use the media hook to fetch user's media
+	const { media: userMedia, isLoading: mediaLoading, error: mediaError, fetchMedia } = useMedia();
 
 	// Use the socket hook for real-time functionality
 	const {
 		isConnected,
+		isJoined,
 		users,
 		messages,
+		mediaQueue: socketMediaQueue,
 		error: socketError,
 		sendMessage,
 		leaveRoom,
+		addToQueue: socketAddToQueue,
+		removeFromQueue: socketRemoveFromQueue,
+		clearQueue: socketClearQueue,
 	} = useRoomSocket(roomCode || '');
 
 	useEffect(() => {
@@ -65,6 +79,29 @@ export const RoomPage: React.FC = () => {
 		}
 	}, [roomCode, user, navigate, isConnected]);
 
+	// Fetch user's media when component mounts
+	useEffect(() => {
+		if (user) {
+			fetchMedia();
+		}
+	}, [user]); // Remove fetchMedia dependency to prevent infinite re-renders
+
+	// Debug: Log media data when it changes
+	useEffect(() => {
+		console.log('RoomPage: userMedia changed:', userMedia);
+	}, [userMedia]);
+
+	// Auto-play first item in queue when queue changes
+	useEffect(() => {
+		if (socketMediaQueue.length > 0 && mediaRef.current) {
+			// Auto-play the first item in the queue
+			mediaRef.current.play().catch((error) => {
+				console.log('Auto-play failed:', error);
+				// Auto-play might be blocked by browser policy, that's okay
+			});
+		}
+	}, [socketMediaQueue]);
+
 	const handleSendMessage = () => {
 		if (!newMessage.trim()) return;
 
@@ -75,6 +112,33 @@ export const RoomPage: React.FC = () => {
 	const handleLeaveRoom = () => {
 		leaveRoom();
 		navigate('/');
+	};
+
+	// Media queue management
+	const handleAddToQueue = (media: Media, position: 'top' | 'end' = 'end') => {
+		if (!roomCode || !media) return;
+
+		console.log('handleAddToQueue called with:', { media, position, roomCode });
+		console.log('Socket methods available:', { socketAddToQueue, isConnected, isJoined });
+
+		// Send to socket to sync with all users (same as test button)
+		socketAddToQueue(media, position);
+		console.log('Added to queue via socket:', media.title, position);
+	};
+
+	const handleRemoveFromQueue = (queueItemId: string) => {
+		// Send to socket to sync with all users
+		socketRemoveFromQueue(queueItemId);
+	};
+
+	const handlePlayPause = () => {
+		setIsPlaying(!isPlaying);
+		// TODO: Emit socket event to sync with other users
+	};
+
+	const handleSeek = (newTime: number) => {
+		setCurrentTime(newTime);
+		// TODO: Emit socket event to sync with other users
 	};
 
 	if (isLoading) {
@@ -176,6 +240,180 @@ export const RoomPage: React.FC = () => {
 					</div>
 				</div>
 
+				{/* Media Queue Section */}
+				<div
+					style={{
+						width: '300px',
+						backgroundColor: '#f8f9fa',
+						borderRight: '1px solid #dee2e6',
+						display: 'flex',
+						flexDirection: 'column',
+					}}
+				>
+					{/* Media Queue Header */}
+					<div
+						style={{
+							padding: '20px 20px 15px 20px',
+							borderBottom: '1px solid #dee2e6',
+						}}
+					>
+						<h3 style={{ margin: '0 0 15px 0' }}>Media Queue</h3>
+
+						{/* Media Selection Dropdown */}
+						<div style={{ marginBottom: '15px' }}>
+							{mediaLoading ? (
+								<div style={{ padding: '8px', textAlign: 'center', color: '#6c757d' }}>
+									Loading media...
+								</div>
+							) : mediaError ? (
+								<div style={{ padding: '8px', textAlign: 'center', color: '#dc3545' }}>
+									Error loading media: {mediaError}
+									<br />
+									<button
+										onClick={fetchMedia}
+										style={{
+											marginTop: '8px',
+											padding: '4px 8px',
+											fontSize: '12px',
+											backgroundColor: '#6c757d',
+											color: 'white',
+											border: 'none',
+											borderRadius: '4px',
+											cursor: 'pointer',
+										}}
+									>
+										Retry
+									</button>
+								</div>
+							) : (
+								<select
+									value={selectedMedia?.id || ''}
+									onChange={(e) => {
+										const media = userMedia?.find((m) => m.id === e.target.value);
+										setSelectedMedia(media || null);
+									}}
+									style={{
+										width: '100%',
+										padding: '8px',
+										border: '1px solid #dee2e6',
+										borderRadius: '4px',
+										fontSize: '14px',
+									}}
+								>
+									<option value=''>Select media to add...</option>
+									{userMedia && userMedia.length > 0 ? (
+										userMedia.map((media) => (
+											<option
+												key={media.id}
+												value={media.id}
+											>
+												{media.title}
+											</option>
+										))
+									) : (
+										<option
+											value=''
+											disabled
+										>
+											No media available
+										</option>
+									)}
+								</select>
+							)}
+						</div>
+
+						{/* Add to Queue Buttons */}
+						{selectedMedia && (
+							<div style={{ display: 'flex', gap: '8px' }}>
+								<Button
+									onClick={() => handleAddToQueue(selectedMedia, 'top')}
+									variant='secondary'
+								>
+									Add to Top
+								</Button>
+								<Button
+									onClick={() => handleAddToQueue(selectedMedia, 'end')}
+									variant='secondary'
+								>
+									Add to End
+								</Button>
+							</div>
+						)}
+
+						{/* Queue Management Buttons */}
+						{socketMediaQueue.length > 0 && (
+							<div style={{ marginTop: '10px' }}>
+								<button
+									onClick={() => socketClearQueue()}
+									style={{
+										fontSize: '12px',
+										padding: '4px 8px',
+										backgroundColor: '#dc3545',
+										color: 'white',
+										border: 'none',
+										borderRadius: '4px',
+										cursor: 'pointer',
+									}}
+								>
+									Clear Queue
+								</button>
+							</div>
+						)}
+					</div>
+
+					{/* Queue List */}
+					<div
+						style={{
+							flex: 1,
+							padding: '15px 20px',
+							overflowY: 'auto',
+						}}
+					>
+						{socketMediaQueue.length === 0 ? (
+							<p style={{ color: '#6c757d', textAlign: 'center', marginTop: '20px' }}>
+								No media in queue
+							</p>
+						) : (
+							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+								{socketMediaQueue.map((item) => (
+									<div
+										key={item.id}
+										style={{
+											padding: '12px',
+											backgroundColor: 'white',
+											borderRadius: '6px',
+											border: '1px solid #dee2e6',
+										}}
+									>
+										<div
+											style={{
+												display: 'flex',
+												justifyContent: 'space-between',
+												alignItems: 'flex-start',
+												marginBottom: '8px',
+											}}
+										>
+											<span style={{ fontWeight: 'bold', fontSize: '14px' }}>{item.title}</span>
+											<button
+												onClick={() => handleRemoveFromQueue(item.id)}
+												style={{
+													background: 'none',
+													border: 'none',
+													color: '#dc3545',
+													cursor: 'pointer',
+													fontSize: '16px',
+												}}
+											>
+												×
+											</button>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+
 				{/* Center - Media Streaming Area */}
 				<div
 					style={{
@@ -188,24 +426,74 @@ export const RoomPage: React.FC = () => {
 						color: 'white',
 					}}
 				>
-					<div style={{ textAlign: 'center' }}>
-						<h2>Media Streaming Area</h2>
-						<p>Video/audio content will appear here</p>
-						<div
-							style={{
-								width: '400px',
-								height: '225px',
-								backgroundColor: '#333',
-								border: '2px dashed #666',
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								borderRadius: '8px',
-							}}
-						>
-							<p>Media Player</p>
+					{socketMediaQueue.length === 0 ? (
+						<div style={{ textAlign: 'center' }}>
+							<h2>Media Streaming Area</h2>
+							<p>Video/audio content will appear here</p>
 						</div>
-					</div>
+					) : (
+						<div style={{ textAlign: 'center' }}>
+							{/* Media Player */}
+							<div style={{ width: '400px', height: '225px', margin: '0 auto' }}>
+								{socketMediaQueue[0].mimeType.startsWith('video/') ? (
+									<video
+										ref={mediaRef as React.RefObject<HTMLVideoElement>}
+										controls
+										autoPlay
+										style={{
+											width: '100%',
+											height: '100%',
+											borderRadius: '8px',
+										}}
+										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+										onPlay={() => setIsPlaying(true)}
+										onPause={() => setIsPlaying(false)}
+									>
+										<source
+											src={socketMediaQueue[0].url}
+											type={socketMediaQueue[0].mimeType}
+										/>
+										Your browser does not support the video tag.
+									</video>
+								) : socketMediaQueue[0].mimeType.startsWith('audio/') ? (
+									<audio
+										ref={mediaRef as React.RefObject<HTMLAudioElement>}
+										controls
+										autoPlay
+										style={{
+											width: '100%',
+											borderRadius: '8px',
+										}}
+										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+										onPlay={() => setIsPlaying(true)}
+										onPause={() => setIsPlaying(false)}
+									>
+										<source
+											src={socketMediaQueue[0].url}
+											type={socketMediaQueue[0].mimeType}
+										/>
+										Your browser does not support the audio tag.
+									</audio>
+								) : (
+									<div
+										style={{
+											width: '100%',
+											borderRadius: '8px',
+											backgroundColor: '#333',
+											border: '2px dashed #666',
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											color: 'white',
+											padding: '20px',
+										}}
+									>
+										<p>Unsupported media type</p>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* Right Sidebar - Messages */}

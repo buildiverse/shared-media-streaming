@@ -2,6 +2,10 @@ import { Socket } from 'socket.io';
 import { MediaSyncController } from '../controllers/media-sync.controller';
 import { emitValidationError } from '../middlewares/error-handler.middleware';
 import {
+	AddToQueueInput,
+	addToQueueSchema,
+	ClearQueueInput,
+	clearQueueSchema,
 	JoinRoomInput,
 	joinRoomSchema,
 	LeaveRoomInput,
@@ -12,6 +16,10 @@ import {
 	mediaPlaySchema,
 	MediaSeekInput,
 	mediaSeekSchema,
+	RemoveFromQueueInput,
+	removeFromQueueSchema,
+	ReorderQueueInput,
+	reorderQueueSchema,
 } from '../validators/media-sync.validation';
 
 export const createMediaSyncRoutes = (mediaSyncController: MediaSyncController) => {
@@ -60,6 +68,44 @@ export const createMediaSyncRoutes = (mediaSyncController: MediaSyncController) 
 				return;
 			}
 			mediaSyncController.handleMediaSeek(socket, validation.data);
+		});
+
+		// Media queue events
+		socket.on('add-to-queue', (data: AddToQueueInput) => {
+			console.log('add-to-queue event received:', data);
+			const validation = addToQueueSchema.safeParse(data);
+			if (!validation.success) {
+				emitValidationError(socket, 'add-to-queue', validation.error.issues);
+				return;
+			}
+			mediaSyncController.handleAddToQueue(socket, validation.data);
+		});
+
+		socket.on('remove-from-queue', (data: RemoveFromQueueInput) => {
+			const validation = removeFromQueueSchema.safeParse(data);
+			if (!validation.success) {
+				emitValidationError(socket, 'remove-from-queue', validation.error.issues);
+				return;
+			}
+			mediaSyncController.handleRemoveFromQueue(socket, validation.data);
+		});
+
+		socket.on('reorder-queue', (data: ReorderQueueInput) => {
+			const validation = reorderQueueSchema.safeParse(data);
+			if (!validation.success) {
+				emitValidationError(socket, 'reorder-queue', validation.error.issues);
+				return;
+			}
+			mediaSyncController.handleReorderQueue(socket, validation.data);
+		});
+
+		socket.on('clear-queue', (data: ClearQueueInput) => {
+			const validation = clearQueueSchema.safeParse(data);
+			if (!validation.success) {
+				emitValidationError(socket, 'clear-queue', validation.error.issues);
+				return;
+			}
+			mediaSyncController.handleClearQueue(socket, validation.data);
 		});
 	};
 };

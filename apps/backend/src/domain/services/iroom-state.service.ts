@@ -14,10 +14,33 @@ export interface RoomMessage {
 	timestamp: Date;
 }
 
+export interface MediaQueueItem {
+	id: string;
+	mediaId: string;
+	title: string;
+	url: string;
+	thumbnails: string[];
+	mimeType: string;
+	duration: number;
+	addedBy: string;
+	addedAt: Date;
+	position: number; // Position in queue
+}
+
+export interface PlaybackState {
+	isPlaying: boolean;
+	currentMediaId: string | null;
+	currentTimestamp: number; // Current playback time in seconds
+	lastUpdated: Date;
+	updatedBy: string;
+}
+
 export interface RoomState {
 	roomCode: string;
 	users: Map<string, RoomUser>; // socketId -> user
 	messages: RoomMessage[];
+	mediaQueue: MediaQueueItem[];
+	playbackState: PlaybackState;
 	createdAt: Date;
 }
 
@@ -40,4 +63,23 @@ export interface IRoomStateService {
 	// Room state
 	getRoomState(roomCode: string): RoomState | null;
 	getAllRooms(): string[];
+
+	// Media queue management
+	addToQueue(
+		roomCode: string,
+		media: Omit<MediaQueueItem, 'id' | 'addedAt' | 'position'>,
+		position?: 'top' | 'end',
+	): MediaQueueItem | null;
+	removeFromQueue(roomCode: string, queueItemId: string): boolean;
+	reorderQueue(roomCode: string, queueItemId: string, newPosition: number): boolean;
+	getMediaQueue(roomCode: string): MediaQueueItem[];
+	clearQueue(roomCode: string): boolean;
+
+	// Playback control
+	updatePlaybackState(
+		roomCode: string,
+		playbackState: Partial<PlaybackState>,
+		userId: string,
+	): PlaybackState | null;
+	getPlaybackState(roomCode: string): PlaybackState | null;
 }

@@ -18,6 +18,7 @@ import { useRooms } from '../../features/rooms/hooks/useRooms';
 import { Button } from '../../ui/atoms/Button';
 import { MediaGrid } from '../../ui/organisms/MediaGrid';
 import { HomePage } from '../../ui/pages/HomePage';
+import { RoomPage } from '../../ui/pages/RoomPage';
 import { DashboardLayout } from '../../ui/templates/DashboardLayout';
 
 // Protected Route Component
@@ -162,7 +163,7 @@ const AppRoutesContent: React.FC = () => {
 				path='/room/:roomCode'
 				element={
 					<ProtectedRoute>
-						<div>Room Page - Coming Soon</div>
+						<RoomPage />
 					</ProtectedRoute>
 				}
 			/>

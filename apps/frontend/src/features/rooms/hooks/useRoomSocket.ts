@@ -18,13 +18,20 @@ export interface RoomMessage {
 
 interface UseRoomSocketReturn {
 	isConnected: boolean;
+	isJoined: boolean;
 	users: RoomUser[];
 	messages: RoomMessage[];
+	mediaQueue: any[];
 	error: string | null;
 	connect: () => void;
 	disconnect: () => void;
 	sendMessage: (content: string) => void;
 	leaveRoom: () => void;
+	// Media queue methods
+	addToQueue: (media: any, position: 'top' | 'end') => void;
+	removeFromQueue: (queueItemId: string) => void;
+	reorderQueue: (queueItemId: string, newPosition: number) => void;
+	clearQueue: () => void;
 }
 
 export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
@@ -33,6 +40,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 	const [isJoined, setIsJoined] = useState(false);
 	const [users, setUsers] = useState<RoomUser[]>([]);
 	const [messages, setMessages] = useState<RoomMessage[]>([]);
+	const [mediaQueue, setMediaQueue] = useState<any[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const socketRef = useRef<Socket | null>(null);
 	const tokenCheckIntervalRef = useRef<number | null>(null);
@@ -215,6 +223,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				console.log('Room join success:', data);
 				setUsers(data.users || []);
 				setMessages(data.messages || []);
+				setMediaQueue(data.mediaQueue || []);
 				setIsJoined(true);
 				setError(null);
 			});
@@ -256,6 +265,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				setIsJoined(false);
 				setUsers([]);
 				setMessages([]);
+				setMediaQueue([]);
 			});
 
 			socket.on('room:destroyed', (data: any) => {
@@ -265,6 +275,13 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				setIsJoined(false);
 				setUsers([]);
 				setMessages([]);
+				setMediaQueue([]);
+			});
+
+			// Media queue events
+			socket.on('queue-updated', (data: any) => {
+				console.log('Queue updated:', data);
+				setMediaQueue(data.queue || []);
 			});
 		} catch (error) {
 			console.error('Failed to connect to socket:', error);
@@ -290,6 +307,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 		setIsJoined(false);
 		setUsers([]);
 		setMessages([]);
+		setMediaQueue([]);
 		setError(null);
 	}, []);
 
@@ -314,6 +332,65 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 
 		socketRef.current.emit('room:leave', { roomCode });
 	}, [roomCode, isConnected]);
+
+	// Media queue methods
+	const addToQueue = useCallback(
+		(media: any, position: 'top' | 'end') => {
+			if (!socketRef.current || !isConnected || !isJoined) {
+				setError('Not in a room');
+				return;
+			}
+
+			socketRef.current.emit('add-to-queue', {
+				roomCode,
+				media,
+				position,
+			});
+		},
+		[roomCode, isConnected, isJoined],
+	);
+
+	const removeFromQueue = useCallback(
+		(queueItemId: string) => {
+			if (!socketRef.current || !isConnected || !isJoined) {
+				setError('Not in a room');
+				return;
+			}
+
+			socketRef.current.emit('remove-from-queue', {
+				roomCode,
+				queueItemId,
+			});
+		},
+		[roomCode, isConnected, isJoined],
+	);
+
+	const reorderQueue = useCallback(
+		(queueItemId: string, newPosition: number) => {
+			if (!socketRef.current || !isConnected || !isJoined) {
+				setError('Not in a room');
+				return;
+			}
+
+			socketRef.current.emit('reorder-queue', {
+				roomCode,
+				queueItemId,
+				newPosition,
+			});
+		},
+		[roomCode, isConnected, isJoined],
+	);
+
+	const clearQueue = useCallback(() => {
+		if (!socketRef.current || !isConnected || !isJoined) {
+			setError('Not in a room');
+			return;
+		}
+
+		socketRef.current.emit('clear-queue', {
+			roomCode,
+		});
+	}, [roomCode, isConnected, isJoined]);
 
 	// Connect on mount
 	useEffect(() => {
@@ -357,12 +434,18 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 
 	return {
 		isConnected,
+		isJoined,
 		users,
 		messages,
+		mediaQueue,
 		error,
 		connect,
 		disconnect,
 		sendMessage,
 		leaveRoom,
+		addToQueue,
+		removeFromQueue,
+		reorderQueue,
+		clearQueue,
 	};
 };

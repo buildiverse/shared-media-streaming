@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
 	IRoomStateService,
+	MediaQueueItem,
+	PlaybackState,
 	RoomMessage,
 	RoomState,
 	RoomUser,
@@ -14,6 +16,14 @@ export class RoomStateService implements IRoomStateService {
 			roomCode,
 			users: new Map(),
 			messages: [],
+			mediaQueue: [],
+			playbackState: {
+				isPlaying: false,
+				currentMediaId: null,
+				currentTimestamp: 0,
+				lastUpdated: new Date(),
+				updatedBy: hostUser.id,
+			},
 			createdAt: new Date(),
 		};
 
@@ -115,5 +125,105 @@ export class RoomStateService implements IRoomStateService {
 
 	getAllRooms(): string[] {
 		return Array.from(this.rooms.keys());
+	}
+
+	// Media queue management
+	addToQueue(
+		roomCode: string,
+		media: Omit<MediaQueueItem, 'id' | 'addedAt' | 'position'>,
+		position: 'top' | 'end' = 'end',
+	): MediaQueueItem | null {
+		const room = this.rooms.get(roomCode);
+		if (!room) return null;
+
+		const queueItem: MediaQueueItem = {
+			...media,
+			id: uuidv4(),
+			addedAt: new Date(),
+			position: position === 'top' ? 0 : room.mediaQueue.length,
+		};
+
+		if (position === 'top') {
+			// Shift all existing items down
+			room.mediaQueue.forEach((item) => item.position++);
+			room.mediaQueue.unshift(queueItem);
+		} else {
+			room.mediaQueue.push(queueItem);
+		}
+
+		return queueItem;
+	}
+
+	removeFromQueue(roomCode: string, queueItemId: string): boolean {
+		const room = this.rooms.get(roomCode);
+		if (!room) return false;
+
+		const index = room.mediaQueue.findIndex((item) => item.id === queueItemId);
+		if (index === -1) return false;
+
+		room.mediaQueue.splice(index, 1);
+
+		// Reorder positions
+		room.mediaQueue.forEach((item, idx) => {
+			item.position = idx;
+		});
+
+		return true;
+	}
+
+	reorderQueue(roomCode: string, queueItemId: string, newPosition: number): boolean {
+		const room = this.rooms.get(roomCode);
+		if (!room) return false;
+
+		const currentIndex = room.mediaQueue.findIndex((item) => item.id === queueItemId);
+		if (currentIndex === -1 || newPosition < 0 || newPosition >= room.mediaQueue.length)
+			return false;
+
+		const item = room.mediaQueue.splice(currentIndex, 1)[0];
+		room.mediaQueue.splice(newPosition, 0, item);
+
+		// Reorder positions
+		room.mediaQueue.forEach((item, idx) => {
+			item.position = idx;
+		});
+
+		return true;
+	}
+
+	getMediaQueue(roomCode: string): MediaQueueItem[] {
+		const room = this.rooms.get(roomCode);
+		return room ? room.mediaQueue : [];
+	}
+
+	clearQueue(roomCode: string): boolean {
+		const room = this.rooms.get(roomCode);
+		if (!room) return false;
+
+		room.mediaQueue = [];
+		return true;
+	}
+
+	// Playback control
+	updatePlaybackState(
+		roomCode: string,
+		playbackState: Partial<PlaybackState>,
+		userId: string,
+	): PlaybackState | null {
+		const room = this.rooms.get(roomCode);
+		if (!room) return null;
+
+		room.playbackState = {
+			...room.playbackState,
+			...playbackState,
+			lastUpdated: new Date(),
+			updatedBy: userId,
+		};
+
+		return room.playbackState;
+	}
+
+	getPlaybackState(roomCode: string): PlaybackState | null {
+		const room = this.rooms.get(roomCode);
+		return room ? room.playbackState : null;
 	}
 }

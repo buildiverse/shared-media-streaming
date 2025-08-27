@@ -18,8 +18,10 @@ export const useMedia = () => {
 		setError(null);
 
 		try {
-			const response = await apiService.get<Media[]>('/api/v1/media/my-media');
-			setMedia(response);
+			const response = await apiService.get<{ success: boolean; media: Media[]; pagination: any }>(
+				'/api/v1/media/my-media',
+			);
+			setMedia(response.media); // Extract the media array from the response
 		} catch (err: any) {
 			setError(err.response?.data?.message || 'Failed to fetch media');
 		} finally {
@@ -33,8 +35,10 @@ export const useMedia = () => {
 		setError(null);
 
 		try {
-			const response = await apiService.get<Media[]>(`/api/v1/media/my-media`);
-			setMedia(response);
+			const response = await apiService.get<{ success: boolean; media: Media[]; pagination: any }>(
+				`/api/v1/media/my-media`,
+			);
+			setMedia(response.media); // Extract the media array from the response
 		} catch (err: any) {
 			setError(err.response?.data?.message || 'Failed to fetch user media');
 		} finally {

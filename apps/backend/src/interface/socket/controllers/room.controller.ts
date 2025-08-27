@@ -105,6 +105,7 @@ export class SocketRoomController {
 					content: m.content,
 					timestamp: m.timestamp,
 				})),
+				mediaQueue: this.roomStateService.getMediaQueue(roomCode),
 			});
 
 			// Notify other users in the room

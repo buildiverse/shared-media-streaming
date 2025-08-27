@@ -39,7 +39,7 @@ export class SocketService implements ISocketService {
 		const sendChatMessageUseCase = new SendChatMessageUseCase(loggingService);
 
 		// Initialize controllers with use cases
-		this.mediaSyncController = new MediaSyncController(loggingService);
+		this.mediaSyncController = new MediaSyncController(loggingService, roomStateService);
 		this.chatController = new ChatController(loggingService, sendChatMessageUseCase);
 
 		// Initialize room use case
