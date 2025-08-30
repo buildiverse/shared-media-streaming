@@ -75,7 +75,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 						)}
 
 						<dt>Uploaded:</dt>
-						<dd>{formatDate(media.uploadedAt)}</dd>
+						<dd>{formatDate(media.createdAt)}</dd>
 
 						<dt>By:</dt>
 						<dd>{media.uploadedBy}</dd>

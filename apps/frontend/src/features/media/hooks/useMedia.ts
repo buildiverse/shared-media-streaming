@@ -30,7 +30,7 @@ export const useMedia = () => {
 	};
 
 	// Fetch user's media
-	const fetchUserMedia = async (userId: string) => {
+	const fetchUserMedia = async (_userId: string) => {
 		setIsLoading(true);
 		setError(null);
 
