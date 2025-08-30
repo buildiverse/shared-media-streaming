@@ -17,8 +17,6 @@ export interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
 	children,
 	type = 'button',
-	variant = 'primary',
-	size = 'medium',
 	disabled = false,
 	onClick,
 	className = '',

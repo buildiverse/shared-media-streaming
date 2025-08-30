@@ -6,19 +6,20 @@ import { useRoomSocket } from '../../../features/rooms/hooks/useRoomSocket';
 import { Media } from '../../../types';
 import { Button } from '../../atoms/Button';
 
-interface User {
-	id: string;
-	username: string;
-	isHost: boolean;
-}
+// These interfaces are defined but not currently used
+// interface User {
+// 	id: string;
+// 	username: string;
+// 	isHost: boolean;
+// }
 
-interface Message {
-	id: string;
-	userId: string;
-	username: string;
-	content: string;
-	timestamp: Date;
-}
+// interface Message {
+// 	id: string;
+// 	userId: string;
+// 	username: string;
+// 	content: string;
+// 	timestamp: Date;
+// }
 
 export const RoomPage: React.FC = () => {
 	const { roomCode } = useParams<{ roomCode: string }>();
@@ -28,8 +29,8 @@ export const RoomPage: React.FC = () => {
 	const [newMessage, setNewMessage] = useState('');
 	const [isLoading, setIsLoading] = useState(true);
 	const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [currentTime, setCurrentTime] = useState(0);
+	const [_isPlaying, setIsPlaying] = useState(false);
+	const [_currentTime, setCurrentTime] = useState(0);
 	const [isLocalAction, setIsLocalAction] = useState(false);
 	const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
@@ -51,7 +52,7 @@ export const RoomPage: React.FC = () => {
 		clearQueue: socketClearQueue,
 		mediaPlay: socketMediaPlay,
 		mediaPause: socketMediaPause,
-		mediaSeek: socketMediaSeek,
+		// mediaSeek: socketMediaSeek,
 	} = useRoomSocket(roomCode || '');
 
 	useEffect(() => {
@@ -210,15 +211,15 @@ export const RoomPage: React.FC = () => {
 		socketRemoveFromQueue(queueItemId);
 	};
 
-	const handlePlayPause = () => {
-		setIsPlaying(!isPlaying);
-		// TODO: Emit socket event to sync with other users
-	};
+	// const handlePlayPause = () => {
+	// 	setIsPlaying(!isPlaying);
+	// 	// TODO: Emit socket event to sync with other users
+	// };
 
-	const handleSeek = (newTime: number) => {
-		setCurrentTime(newTime);
-		// TODO: Emit socket event to sync with other users
-	};
+	// const handleSeek = (newTime: number) => {
+	// 	setCurrentTime(newTime);
+	// 	// TODO: Emit socket event to sync with other users
+	// };
 
 	if (isLoading) {
 		return (

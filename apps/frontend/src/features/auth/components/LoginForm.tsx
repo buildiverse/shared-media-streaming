@@ -1,7 +1,6 @@
 // LoginForm Component
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { LoginCredentials } from '../../../types';
 import { Button } from '../../../ui/atoms/Button';
 import { FormField } from '../../../ui/molecules/FormField';
@@ -20,7 +19,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 	error,
 	className = '',
 }) => {
-	const navigate = useNavigate();
+	// const navigate = useNavigate();
 	const [formData, setFormData] = useState<LoginCredentials>({
 		username: '',
 		password: '',

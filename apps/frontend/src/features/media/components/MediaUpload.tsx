@@ -44,7 +44,7 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
 			}
 
 			// Validate file type
-			if (!CONFIG.MEDIA.ALLOWED_MIME_TYPES.includes(file.type)) {
+			if (!CONFIG.MEDIA.ALLOWED_MIME_TYPES.includes(file.type as any)) {
 				alert('File type not supported. Please select a valid audio or video file.');
 				return;
 			}
