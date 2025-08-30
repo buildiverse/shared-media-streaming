@@ -60,13 +60,12 @@ export const AppRoutes: React.FC = () => {
 
 // Separate component that uses hooks inside Router context
 const AppRoutesContent: React.FC = () => {
-	const { user, logout, isAuthenticated } = useAuth();
-	const navigate = useNavigate();
+	const { user, logout } = useAuth();
 
 	const handleLogout = () => {
 		logout();
 		// Navigate to login after logout
-		navigate('/login');
+		window.location.href = '/login';
 	};
 
 	return (
@@ -220,7 +219,7 @@ const HomeDashboard: React.FC = () => {
 
 // Media Dashboard Component
 const MediaDashboard: React.FC = () => {
-	const { media, isLoading, error, deleteMedia } = useMedia();
+	const { media, isLoading, deleteMedia } = useMedia();
 
 	return (
 		<div className='media-page'>
@@ -237,7 +236,6 @@ const MediaDashboard: React.FC = () => {
 
 // Room Management Component
 const RoomManagement: React.FC = () => {
-	const { user } = useAuth();
 	const { createRoom, isLoading, error, clearError } = useRooms();
 	const navigate = useNavigate();
 
@@ -299,7 +297,6 @@ const RoomManagement: React.FC = () => {
 
 // Join Room Component
 const JoinRoom: React.FC = () => {
-	const { user } = useAuth();
 	const { publicRooms, fetchPublicRooms, isLoading, error, clearError } = useRooms();
 	const [roomCode, setRoomCode] = useState('');
 	const navigate = useNavigate();
