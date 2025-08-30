@@ -8,6 +8,7 @@
 		"build": "turbo run build",
 		"build:backend": "tsc -p apps/backend/tsconfig.json",
 		"build:shared": "tsc -p packages/shared/tsconfig.json",
+		"start": "NODE_ENV=production pnpm run build && pnpm run start:prod",
 		"start:prod": "NODE_ENV=production node apps/backend/dist/index.js",
 		"lint": "turbo run lint",
 		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
