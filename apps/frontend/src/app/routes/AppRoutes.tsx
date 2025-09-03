@@ -15,6 +15,7 @@ import { RegisterPage } from '../../features/auth/pages/RegisterPage';
 import { MediaUpload } from '../../features/media/components/MediaUpload';
 import { useMedia } from '../../features/media/hooks/useMedia';
 import { useRooms } from '../../features/rooms/hooks/useRooms';
+import { Entry } from '../../routes/Entry';
 import { Button } from '../../ui/atoms/Button';
 import { MediaGrid } from '../../ui/organisms/MediaGrid';
 import { HomePage } from '../../ui/pages/HomePage';
@@ -74,6 +75,11 @@ const AppRoutesContent: React.FC = () => {
 			<Route
 				path='/splash'
 				element={<HomePage user={user} />}
+			/>
+
+			<Route
+				path='/entry'
+				element={<Entry />}
 			/>
 
 			{/* Auth routes */}
@@ -172,7 +178,7 @@ const AppRoutesContent: React.FC = () => {
 				path='*'
 				element={
 					<Navigate
-						to='/splash'
+						to='/entry'
 						replace
 					/>
 				}
