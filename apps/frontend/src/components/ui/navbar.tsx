@@ -25,7 +25,7 @@ export const Navbar = () => {
 					</Link>
 					<span className='text-white/50'>•</span>
 					<Link
-						to='/library'
+						to='/media'
 						className='text-white hover:text-primary transition-colors'
 					>
 						Library

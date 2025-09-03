@@ -1,10 +1,20 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 import React, { useEffect, useRef, useState } from 'react';
+import { Loader, LogOut, MessageCircle, Play, Users, X } from 'react-feather';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
 import { useMedia } from '../../../features/media/hooks/useMedia';
 import { useRoomSocket } from '../../../features/rooms/hooks/useRoomSocket';
 import { Media } from '../../../types';
-import { Button } from '../../atoms/Button';
 
 // These interfaces are defined but not currently used
 // interface User {
@@ -223,308 +233,233 @@ export const RoomPage: React.FC = () => {
 
 	if (isLoading) {
 		return (
-			<div style={{ padding: '20px', textAlign: 'center' }}>
-				<div>Loading room...</div>
-				{socketError && (
-					<div style={{ marginTop: '20px', color: '#dc3545' }}>
-						<strong>Connection Error:</strong> {socketError}
-						<br />
-						<small>Make sure the backend server is running on port 3000</small>
-					</div>
-				)}
+			<div className='flex flex-col items-center justify-center min-h-screen bg-background px-6'>
+				<Card className='bg-background/40 backdrop-blur-lg border-border/30 p-8'>
+					<CardContent className='flex flex-col items-center gap-4'>
+						<Loader className='w-8 h-8 text-primary animate-spin' />
+						<p className='text-white/80'>Loading room...</p>
+						{socketError && (
+							<div className='mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg'>
+								<p className='text-red-400 font-medium'>Connection Error: {socketError}</p>
+								<p className='text-red-400/80 text-sm mt-1'>
+									Make sure the backend server is running on port 3000
+								</p>
+							</div>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 		);
 	}
 
 	return (
-		<div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+		<div className='h-screen flex flex-col bg-background'>
 			{/* Header */}
-			<header
-				style={{
-					padding: '15px 20px',
-					backgroundColor: '#f8f9fa',
-					borderBottom: '1px solid #dee2e6',
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
-				}}
-			>
+			<header className='p-4 bg-background/40 backdrop-blur-lg border-b border-border/30 flex justify-between items-center'>
 				<div>
-					<h1 style={{ margin: 0, fontSize: '24px' }}>Room: {roomCode}</h1>
-					<p style={{ margin: '5px 0 0 0', color: '#6c757d' }}>
-						{isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-					</p>
-					{socketError && <p style={{ margin: '5px 0 0 0', color: '#dc3545' }}>⚠️ {socketError}</p>}
+					<h1 className='text-2xl font-bold text-white m-0'>Room: {roomCode}</h1>
+					<div className='flex items-center gap-2 mt-1'>
+						<div
+							className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+						></div>
+						<p className='text-white/60 text-sm m-0'>
+							{isConnected ? 'Connected' : 'Disconnected'}
+						</p>
+					</div>
+					{socketError && <p className='text-red-400 text-sm mt-1 m-0'>⚠️ {socketError}</p>}
 				</div>
 				<Button
 					onClick={handleLeaveRoom}
-					variant='secondary'
+					variant='outline'
+					className='border-red-500/50 text-red-400 hover:bg-red-500/10'
 				>
+					<LogOut className='w-4 h-4 mr-2' />
 					Leave Room
 				</Button>
 			</header>
 
 			{/* Main Content */}
-			<div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+			<div className='flex-1 flex overflow-hidden'>
 				{/* Left Sidebar - Users */}
-				<div
-					style={{
-						width: '250px',
-						backgroundColor: '#f8f9fa',
-						borderRight: '1px solid #dee2e6',
-						padding: '20px',
-					}}
-				>
-					<h3 style={{ margin: '0 0 15px 0' }}>Users ({users.length})</h3>
-					<div>
-						{users.map((roomUser) => (
-							<div
-								key={roomUser.id}
-								style={{
-									padding: '10px',
-									marginBottom: '8px',
-									backgroundColor: 'white',
-									borderRadius: '6px',
-									border: '1px solid #dee2e6',
-									display: 'flex',
-									alignItems: 'center',
-									gap: '10px',
-								}}
-							>
+				<div className='w-64 bg-background/40 backdrop-blur-lg border-r border-border/30 p-4'>
+					<Card className='bg-background/60 border-border/50'>
+						<CardHeader className='pb-3'>
+							<CardTitle className='text-white text-lg flex items-center gap-2'>
+								<Users className='w-5 h-5' />
+								Users ({users.length})
+							</CardTitle>
+						</CardHeader>
+						<CardContent className='space-y-2'>
+							{users.map((roomUser) => (
 								<div
-									style={{
-										width: '8px',
-										height: '8px',
-										borderRadius: '50%',
-										backgroundColor: roomUser.isHost ? '#28a745' : '#007bff',
-									}}
-								/>
-								<span style={{ fontWeight: roomUser.isHost ? 'bold' : 'normal' }}>
-									{roomUser.username}
-								</span>
-								{roomUser.isHost && (
-									<span
-										style={{
-											fontSize: '12px',
-											backgroundColor: '#28a745',
-											color: 'white',
-											padding: '2px 6px',
-											borderRadius: '10px',
-										}}
-									>
-										Host
+									key={roomUser.id}
+									className='p-3 bg-background/80 border border-border/50 rounded-lg flex items-center gap-3'
+								>
+									<div
+										className={`w-2 h-2 rounded-full ${
+											roomUser.isHost ? 'bg-green-500' : 'bg-primary'
+										}`}
+									/>
+									<span className={`text-white ${roomUser.isHost ? 'font-bold' : 'font-normal'}`}>
+										{roomUser.username}
 									</span>
-								)}
-							</div>
-						))}
-					</div>
+									{roomUser.isHost && (
+										<span className='text-xs bg-green-500 text-white px-2 py-1 rounded-full'>
+											Host
+										</span>
+									)}
+								</div>
+							))}
+						</CardContent>
+					</Card>
 				</div>
 
 				{/* Media Queue Section */}
-				<div
-					style={{
-						width: '300px',
-						backgroundColor: '#f8f9fa',
-						borderRight: '1px solid #dee2e6',
-						display: 'flex',
-						flexDirection: 'column',
-					}}
-				>
-					{/* Media Queue Header */}
-					<div
-						style={{
-							padding: '20px 20px 15px 20px',
-							borderBottom: '1px solid #dee2e6',
-						}}
-					>
-						<h3 style={{ margin: '0 0 15px 0' }}>Media Queue</h3>
-
-						{/* Media Selection Dropdown */}
-						<div style={{ marginBottom: '15px' }}>
-							{mediaLoading ? (
-								<div style={{ padding: '8px', textAlign: 'center', color: '#6c757d' }}>
-									Loading media...
-								</div>
-							) : mediaError ? (
-								<div style={{ padding: '8px', textAlign: 'center', color: '#dc3545' }}>
-									Error loading media: {mediaError}
-									<br />
-									<button
-										onClick={fetchMedia}
-										style={{
-											marginTop: '8px',
-											padding: '4px 8px',
-											fontSize: '12px',
-											backgroundColor: '#6c757d',
-											color: 'white',
-											border: 'none',
-											borderRadius: '4px',
-											cursor: 'pointer',
-										}}
-									>
-										Retry
-									</button>
-								</div>
-							) : (
-								<select
-									value={selectedMedia?.id || ''}
-									onChange={(e) => {
-										const media = userMedia?.find((m) => m.id === e.target.value);
-										setSelectedMedia(media || null);
-									}}
-									style={{
-										width: '100%',
-										padding: '8px',
-										border: '1px solid #dee2e6',
-										borderRadius: '4px',
-										fontSize: '14px',
-									}}
-								>
-									<option value=''>Select media to add...</option>
-									{userMedia && userMedia.length > 0 ? (
-										userMedia.map((media) => (
-											<option
-												key={media.id}
-												value={media.id}
-											>
-												{media.title}
-											</option>
-										))
-									) : (
-										<option
-											value=''
-											disabled
-										>
-											No media available
-										</option>
-									)}
-								</select>
-							)}
-						</div>
-
-						{/* Add to Queue Buttons */}
-						{selectedMedia && (
-							<div style={{ display: 'flex', gap: '8px' }}>
-								<Button
-									onClick={() => handleAddToQueue(selectedMedia, 'top')}
-									variant='secondary'
-								>
-									Add to Top
-								</Button>
-								<Button
-									onClick={() => handleAddToQueue(selectedMedia, 'end')}
-									variant='secondary'
-								>
-									Add to End
-								</Button>
-							</div>
-						)}
-
-						{/* Queue Management Buttons */}
-						{socketMediaQueue.length > 0 && (
-							<div style={{ marginTop: '10px' }}>
-								<button
-									onClick={() => socketClearQueue()}
-									style={{
-										fontSize: '12px',
-										padding: '4px 8px',
-										backgroundColor: '#dc3545',
-										color: 'white',
-										border: 'none',
-										borderRadius: '4px',
-										cursor: 'pointer',
-									}}
-								>
-									Clear Queue
-								</button>
-							</div>
-						)}
-					</div>
-
-					{/* Queue List */}
-					<div
-						style={{
-							flex: 1,
-							padding: '15px 20px',
-							overflowY: 'auto',
-						}}
-					>
-						{socketMediaQueue.length === 0 ? (
-							<p style={{ color: '#6c757d', textAlign: 'center', marginTop: '20px' }}>
-								No media in queue
-							</p>
-						) : (
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-								{socketMediaQueue.map((item) => (
-									<div
-										key={item.id}
-										style={{
-											padding: '12px',
-											backgroundColor: 'white',
-											borderRadius: '6px',
-											border: '1px solid #dee2e6',
-										}}
-									>
-										<div
-											style={{
-												display: 'flex',
-												justifyContent: 'space-between',
-												alignItems: 'flex-start',
-												marginBottom: '8px',
-											}}
-										>
-											<span style={{ fontWeight: 'bold', fontSize: '14px' }}>{item.title}</span>
-											<button
-												onClick={() => handleRemoveFromQueue(item.id)}
-												style={{
-													background: 'none',
-													border: 'none',
-													color: '#dc3545',
-													cursor: 'pointer',
-													fontSize: '16px',
-												}}
-											>
-												×
-											</button>
-										</div>
+				<div className='w-80 bg-background/40 backdrop-blur-lg border-r border-border/30 flex flex-col'>
+					<Card className='bg-background/60 border-border/50 h-full flex flex-col'>
+						<CardHeader className='pb-3'>
+							<CardTitle className='text-white text-lg flex items-center gap-2'>
+								<Play className='w-5 h-5' />
+								Media Queue
+							</CardTitle>
+						</CardHeader>
+						<CardContent className='flex-1 flex flex-col space-y-4'>
+							{/* Media Selection */}
+							<div>
+								{mediaLoading ? (
+									<div className='p-3 text-center text-white/60'>
+										<Loader className='w-4 h-4 animate-spin mx-auto mb-2' />
+										Loading media...
 									</div>
-								))}
+								) : mediaError ? (
+									<div className='p-3 text-center'>
+										<p className='text-red-400 text-sm mb-2'>Error loading media: {mediaError}</p>
+										<Button
+											onClick={fetchMedia}
+											size='sm'
+											variant='outline'
+											className='border-red-500/50 text-red-400 hover:bg-red-500/10'
+										>
+											Retry
+										</Button>
+									</div>
+								) : (
+									<Select
+										value={selectedMedia?.id || ''}
+										onValueChange={(value) => {
+											const media = userMedia?.find((m) => m.id === value);
+											setSelectedMedia(media || null);
+										}}
+									>
+										<SelectTrigger className='bg-background/80 border-border/50 text-white'>
+											<SelectValue placeholder='Select media to add...' />
+										</SelectTrigger>
+										<SelectContent className='bg-background border-border/50'>
+											{userMedia && userMedia.length > 0 ? (
+												userMedia.map((media) => (
+													<SelectItem
+														key={media.id}
+														value={media.id}
+														className='text-white hover:bg-background/80'
+													>
+														{media.title}
+													</SelectItem>
+												))
+											) : (
+												<SelectItem
+													value=''
+													disabled
+													className='text-white/60'
+												>
+													No media available
+												</SelectItem>
+											)}
+										</SelectContent>
+									</Select>
+								)}
 							</div>
-						)}
-					</div>
+
+							{/* Add to Queue Buttons */}
+							{selectedMedia && (
+								<div className='flex gap-2'>
+									<Button
+										onClick={() => handleAddToQueue(selectedMedia, 'top')}
+										size='sm'
+										className='flex-1 bg-primary hover:bg-primary/90 text-primary-foreground'
+									>
+										Add to Top
+									</Button>
+									<Button
+										onClick={() => handleAddToQueue(selectedMedia, 'end')}
+										size='sm'
+										variant='outline'
+										className='flex-1 border-white/20 text-white hover:bg-white/10'
+									>
+										Add to End
+									</Button>
+								</div>
+							)}
+
+							{/* Queue Management */}
+							{socketMediaQueue.length > 0 && (
+								<Button
+									onClick={() => socketClearQueue()}
+									size='sm'
+									variant='outline'
+									className='border-red-500/50 text-red-400 hover:bg-red-500/10'
+								>
+									<X className='w-4 h-4 mr-2' />
+									Clear Queue
+								</Button>
+							)}
+							{/* Queue List */}
+							<div className='flex-1 overflow-y-auto space-y-2'>
+								{socketMediaQueue.length === 0 ? (
+									<p className='text-white/60 text-center mt-8'>No media in queue</p>
+								) : (
+									<div className='space-y-2'>
+										{socketMediaQueue.map((item) => (
+											<div
+												key={item.id}
+												className='p-3 bg-background/80 border border-border/50 rounded-lg'
+											>
+												<div className='flex justify-between items-start'>
+													<span className='text-white font-medium text-sm'>{item.title}</span>
+													<Button
+														onClick={() => handleRemoveFromQueue(item.id)}
+														size='sm'
+														variant='ghost'
+														className='h-6 w-6 p-0 text-red-400 hover:bg-red-500/10'
+													>
+														<X className='w-4 h-4' />
+													</Button>
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						</CardContent>
+					</Card>
 				</div>
 
 				{/* Center - Media Streaming Area */}
-				<div
-					style={{
-						flex: 1,
-						backgroundColor: '#000',
-						display: 'flex',
-						flexDirection: 'column',
-						alignItems: 'center',
-						justifyContent: 'center',
-						color: 'white',
-					}}
-				>
+				<div className='flex-1 bg-black flex flex-col items-center justify-center text-white'>
 					{socketMediaQueue.length === 0 ? (
-						<div style={{ textAlign: 'center' }}>
-							<h2>Media Streaming Area</h2>
-							<p>Video/audio content will appear here</p>
+						<div className='text-center'>
+							<h2 className='text-2xl font-bold text-white mb-2'>Media Streaming Area</h2>
+							<p className='text-white/60'>Video/audio content will appear here</p>
 						</div>
 					) : (
-						<div style={{ textAlign: 'center' }}>
+						<div className='text-center'>
 							{/* Media Player */}
-							<div style={{ width: '400px', height: '225px', margin: '0 auto' }}>
+							<div className='w-full max-w-4xl mx-auto'>
 								{socketMediaQueue[0].mimeType.startsWith('video/') ? (
 									<video
 										ref={mediaRef as React.RefObject<HTMLVideoElement>}
 										controls
 										autoPlay
-										style={{
-											width: '100%',
-											height: '100%',
-											borderRadius: '8px',
-										}}
+										className='w-full h-auto rounded-lg'
 										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
 										onPlay={(e) => {
 											console.log('Video play event triggered by user:', user?.username);
@@ -552,54 +487,47 @@ export const RoomPage: React.FC = () => {
 										Your browser does not support the video tag.
 									</video>
 								) : socketMediaQueue[0].mimeType.startsWith('audio/') ? (
-									<audio
-										ref={mediaRef as React.RefObject<HTMLAudioElement>}
-										controls
-										autoPlay
-										style={{
-											width: '100%',
-											borderRadius: '8px',
-										}}
-										onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-										onPlay={(e) => {
-											console.log('Audio play event triggered by user:', user?.username);
-											setIsPlaying(true);
-											// Emit socket event to sync with other users
-											if (!isLocalAction) {
-												console.log('Emitting audio play socket event from user:', user?.username);
-												socketMediaPlay(roomCode || '', e.currentTarget.currentTime);
-											}
-										}}
-										onPause={(e) => {
-											console.log('Audio pause event triggered by user:', user?.username);
-											setIsPlaying(false);
-											// Emit socket event to sync with other users
-											if (!isLocalAction) {
-												console.log('Emitting audio pause socket event from user:', user?.username);
-												socketMediaPause(roomCode || '', e.currentTarget.currentTime);
-											}
-										}}
-									>
-										<source
-											src={socketMediaQueue[0].url}
-											type={socketMediaQueue[0].mimeType}
-										/>
-										Your browser does not support the audio tag.
-									</audio>
+									<div className='bg-background/20 backdrop-blur-lg border border-border/30 rounded-lg p-8'>
+										<audio
+											ref={mediaRef as React.RefObject<HTMLAudioElement>}
+											controls
+											autoPlay
+											className='w-full rounded-lg'
+											onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+											onPlay={(e) => {
+												console.log('Audio play event triggered by user:', user?.username);
+												setIsPlaying(true);
+												// Emit socket event to sync with other users
+												if (!isLocalAction) {
+													console.log(
+														'Emitting audio play socket event from user:',
+														user?.username,
+													);
+													socketMediaPlay(roomCode || '', e.currentTarget.currentTime);
+												}
+											}}
+											onPause={(e) => {
+												console.log('Audio pause event triggered by user:', user?.username);
+												setIsPlaying(false);
+												// Emit socket event to sync with other users
+												if (!isLocalAction) {
+													console.log(
+														'Emitting audio pause socket event from user:',
+														user?.username,
+													);
+													socketMediaPause(roomCode || '', e.currentTarget.currentTime);
+												}
+											}}
+										>
+											<source
+												src={socketMediaQueue[0].url}
+												type={socketMediaQueue[0].mimeType}
+											/>
+											Your browser does not support the audio tag.
+										</audio>
+									</div>
 								) : (
-									<div
-										style={{
-											width: '100%',
-											borderRadius: '8px',
-											backgroundColor: '#333',
-											border: '2px dashed #666',
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-											color: 'white',
-											padding: '20px',
-										}}
-									>
+									<div className='w-full max-w-md mx-auto bg-background/20 backdrop-blur-lg border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center text-white p-8'>
 										<p>Unsupported media type</p>
 									</div>
 								)}
@@ -609,106 +537,60 @@ export const RoomPage: React.FC = () => {
 				</div>
 
 				{/* Right Sidebar - Messages */}
-				<div
-					style={{
-						width: '300px',
-						backgroundColor: '#f8f9fa',
-						borderLeft: '1px solid #dee2e6',
-						display: 'flex',
-						flexDirection: 'column',
-					}}
-				>
-					{/* Messages Header */}
-					<div
-						style={{
-							padding: '20px 20px 15px 20px',
-							borderBottom: '1px solid #dee2e6',
-						}}
-					>
-						<h3 style={{ margin: 0 }}>Chat</h3>
-					</div>
-
-					{/* Messages List */}
-					<div
-						style={{
-							flex: 1,
-							padding: '15px 20px',
-							overflowY: 'auto',
-							display: 'flex',
-							flexDirection: 'column',
-							gap: '10px',
-						}}
-					>
-						{messages.map((message) => (
-							<div
-								key={message.id}
-								style={{
-									padding: '10px',
-									backgroundColor: 'white',
-									borderRadius: '8px',
-									border: '1px solid #dee2e6',
-								}}
-							>
-								<div
-									style={{
-										display: 'flex',
-										justifyContent: 'space-between',
-										marginBottom: '5px',
-									}}
-								>
-									<span
-										style={{
-											fontWeight: 'bold',
-											color: message.userId === user?.id ? '#007bff' : '#495057',
-										}}
+				<div className='w-80 bg-background/40 backdrop-blur-lg border-l border-border/30 flex flex-col'>
+					<Card className='bg-background/60 border-border/50 h-full flex flex-col'>
+						<CardHeader className='pb-3'>
+							<CardTitle className='text-white text-lg flex items-center gap-2'>
+								<MessageCircle className='w-5 h-5' />
+								Chat
+							</CardTitle>
+						</CardHeader>
+						<CardContent className='flex-1 flex flex-col space-y-3'>
+							{/* Messages List */}
+							<div className='flex-1 overflow-y-auto space-y-3'>
+								{messages.map((message) => (
+									<div
+										key={message.id}
+										className='p-3 bg-background/80 border border-border/50 rounded-lg'
 									>
-										{message.username}
-									</span>
-									<span
-										style={{
-											fontSize: '12px',
-											color: '#6c757d',
-										}}
-									>
-										{new Date(message.timestamp).toLocaleTimeString()}
-									</span>
-								</div>
-								<p style={{ margin: 0, wordBreak: 'break-word' }}>{message.content}</p>
+										<div className='flex justify-between items-start mb-2'>
+											<span
+												className={`font-medium text-sm ${
+													message.userId === user?.id ? 'text-primary' : 'text-white'
+												}`}
+											>
+												{message.username}
+											</span>
+											<span className='text-xs text-white/60'>
+												{new Date(message.timestamp).toLocaleTimeString()}
+											</span>
+										</div>
+										<p className='text-white text-sm m-0 break-words'>{message.content}</p>
+									</div>
+								))}
 							</div>
-						))}
-					</div>
 
-					{/* Message Input */}
-					<div
-						style={{
-							padding: '15px 20px',
-							borderTop: '1px solid #dee2e6',
-							backgroundColor: 'white',
-						}}
-					>
-						<div style={{ display: 'flex', gap: '10px' }}>
-							<input
-								type='text'
-								value={newMessage}
-								onChange={(e) => setNewMessage(e.target.value)}
-								onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-								placeholder='Type a message...'
-								style={{
-									flex: 1,
-									padding: '8px 12px',
-									border: '1px solid #dee2e6',
-									borderRadius: '4px',
-									fontSize: '14px',
-								}}
-							/>
-							<Button
-								onClick={handleSendMessage}
-								disabled={!newMessage.trim()}
-							>
-								Send
-							</Button>
-						</div>
-					</div>
+							{/* Message Input */}
+							<div className='flex gap-2 pt-3 border-t border-border/30'>
+								<Input
+									type='text'
+									value={newMessage}
+									onChange={(e) => setNewMessage(e.target.value)}
+									onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+									placeholder='Type a message...'
+									className='flex-1 bg-background/80 border-border/50 text-white placeholder-white/50'
+								/>
+								<Button
+									onClick={handleSendMessage}
+									disabled={!newMessage.trim()}
+									size='sm'
+									className='bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed'
+								>
+									Send
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
 				</div>
 			</div>
 		</div>

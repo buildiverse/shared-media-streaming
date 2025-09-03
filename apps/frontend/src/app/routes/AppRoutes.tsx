@@ -256,17 +256,33 @@ const HomeDashboard: React.FC = () => {
 
 // Media Dashboard Component
 const MediaDashboard: React.FC = () => {
-	const { media, isLoading, deleteMedia } = useMedia();
+	const { user } = useAuth();
+	const { media, isLoading, deleteMedia, fetchMedia } = useMedia();
+
+	// Fetch user's media when component mounts
+	React.useEffect(() => {
+		if (user) {
+			fetchMedia();
+		}
+	}, [user]); // Remove fetchMedia dependency to prevent infinite re-renders
 
 	return (
-		<div className='media-page'>
-			<h1>Media Library</h1>
-			<MediaGrid
-				media={media}
-				isLoading={isLoading}
-				onDelete={deleteMedia}
-				emptyMessage='No media found. Start by uploading some files!'
-			/>
+		<div className='flex flex-col min-h-[calc(100vh-160px)] px-6 py-8'>
+			{/* Header */}
+			<div className='text-center mb-8'>
+				<h1 className='text-3xl font-bold text-white mb-2'>Media Library</h1>
+				<p className='text-base text-white/80'>Manage and view your uploaded media files</p>
+			</div>
+
+			{/* Media Grid */}
+			<div className='flex-1'>
+				<MediaGrid
+					media={media}
+					isLoading={isLoading}
+					onDelete={deleteMedia}
+					emptyMessage='No media found. Start by uploading some files!'
+				/>
+			</div>
 		</div>
 	);
 };
@@ -288,44 +304,61 @@ const RoomManagement: React.FC = () => {
 	};
 
 	return (
-		<div className='room-management-page'>
-			<h1>Room Management</h1>
-			<p>Create and manage your streaming rooms</p>
+		<div className='flex flex-col min-h-[calc(100vh-160px)] px-6 py-8'>
+			{/* Header */}
+			<div className='text-center mb-8'>
+				<h1 className='text-3xl font-bold text-white mb-2'>Room Management</h1>
+				<p className='text-base text-white/80'>Create and manage your streaming rooms</p>
+			</div>
 
+			{/* Error Display */}
 			{error && (
-				<div style={{ color: 'red', marginBottom: '20px' }}>
-					{error}
-					<button
-						onClick={clearError}
-						style={{ marginLeft: '10px' }}
-					>
-						×
-					</button>
+				<div className='mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg'>
+					<div className='flex items-center justify-between'>
+						<p className='text-red-400'>{error}</p>
+						<Button
+							onClick={clearError}
+							variant='outline'
+							size='sm'
+							className='border-red-500/50 text-red-400 hover:bg-red-500/10'
+						>
+							×
+						</Button>
+					</div>
 				</div>
 			)}
 
-			<div>
-				<h2>Create New Room</h2>
-				<div>
-					<Button
-						onClick={() => handleCreateRoom(false)}
-						disabled={isLoading}
-					>
-						{isLoading ? 'Creating...' : 'Create Public Room'}
-					</Button>
-					<Button
-						onClick={() => handleCreateRoom(true)}
-						disabled={isLoading}
-					>
-						{isLoading ? 'Creating...' : 'Create Private Room'}
-					</Button>
+			<div className='max-w-2xl mx-auto space-y-8'>
+				{/* Create New Room */}
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-6'>
+					<h2 className='text-xl font-semibold text-white mb-4'>Create New Room</h2>
+					<div className='flex flex-col sm:flex-row gap-4'>
+						<Button
+							onClick={() => handleCreateRoom(false)}
+							disabled={isLoading}
+							className='flex-1 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed'
+						>
+							{isLoading ? 'Creating...' : 'Create Public Room'}
+						</Button>
+						<Button
+							onClick={() => handleCreateRoom(true)}
+							disabled={isLoading}
+							variant='outline'
+							className='flex-1 border-white/20 text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed'
+						>
+							{isLoading ? 'Creating...' : 'Create Private Room'}
+						</Button>
+					</div>
 				</div>
-			</div>
 
-			<div>
-				<h2>Your Rooms</h2>
-				<div>
-					<p>No rooms created yet. Create your first room to get started!</p>
+				{/* Your Rooms */}
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-6'>
+					<h2 className='text-xl font-semibold text-white mb-4'>Your Rooms</h2>
+					<div className='text-center py-8'>
+						<p className='text-white/80'>
+							No rooms created yet. Create your first room to get started!
+						</p>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -354,63 +387,94 @@ const JoinRoom: React.FC = () => {
 	};
 
 	return (
-		<div className='join-room-page'>
-			<h1>Join a Room</h1>
-			<p>Enter a room code to join an existing streaming session</p>
+		<div className='flex flex-col min-h-[calc(100vh-160px)] px-6 py-8'>
+			{/* Header */}
+			<div className='text-center mb-8'>
+				<h1 className='text-3xl font-bold text-white mb-2'>Join a Room</h1>
+				<p className='text-base text-white/80'>
+					Enter a room code to join an existing streaming session
+				</p>
+			</div>
 
+			{/* Error Display */}
 			{error && (
-				<div style={{ color: 'red', marginBottom: '20px' }}>
-					{error}
-					<button
-						onClick={clearError}
-						style={{ marginLeft: '10px' }}
-					>
-						×
-					</button>
+				<div className='mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg'>
+					<div className='flex items-center justify-between'>
+						<p className='text-red-400'>{error}</p>
+						<Button
+							onClick={clearError}
+							variant='outline'
+							size='sm'
+							className='border-red-500/50 text-red-400 hover:bg-red-500/10'
+						>
+							×
+						</Button>
+					</div>
 				</div>
 			)}
 
-			<div>
-				<h2>Join by Room Code</h2>
-				<div>
-					<input
-						type='text'
-						placeholder='Enter 8-character room code'
-						maxLength={8}
-						value={roomCode}
-						onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-						style={{ padding: '8px', marginRight: '10px', fontSize: '16px' }}
-					/>
-					<Button
-						onClick={handleJoinRoom}
-						disabled={roomCode.length !== 8}
-					>
-						Join Room
-					</Button>
+			<div className='max-w-2xl mx-auto space-y-8'>
+				{/* Join by Room Code */}
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-6'>
+					<h2 className='text-xl font-semibold text-white mb-4'>Join by Room Code</h2>
+					<div className='flex gap-3'>
+						<input
+							type='text'
+							placeholder='Enter 8-character room code'
+							maxLength={8}
+							value={roomCode}
+							onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+							className='flex-1 px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
+						/>
+						<Button
+							onClick={handleJoinRoom}
+							disabled={roomCode.length !== 8}
+							className='px-6 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed'
+						>
+							Join Room
+						</Button>
+					</div>
 				</div>
-			</div>
 
-			<div>
-				<h2>Public Rooms</h2>
-				<div>
-					{isLoading ? (
-						<p>Loading public rooms...</p>
-					) : publicRooms.length > 0 ? (
-						<div>
-							{publicRooms.map((room) => (
-								<div
-									key={room.id}
-									style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ccc' }}
-								>
-									<strong>Room Code: {room.roomCode}</strong>
-									<p>Created: {new Date(room.createdAt).toLocaleDateString()}</p>
-									<Button onClick={() => setRoomCode(room.roomCode)}>Use This Code</Button>
-								</div>
-							))}
-						</div>
-					) : (
-						<p>No public rooms available</p>
-					)}
+				{/* Public Rooms */}
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-6'>
+					<h2 className='text-xl font-semibold text-white mb-4'>Public Rooms</h2>
+					<div>
+						{isLoading ? (
+							<div className='flex items-center justify-center py-8'>
+								<div className='text-white/80'>Loading public rooms...</div>
+							</div>
+						) : publicRooms.length > 0 ? (
+							<div className='grid gap-4'>
+								{publicRooms.map((room) => (
+									<div
+										key={room.id}
+										className='p-4 bg-background/60 border border-border/50 rounded-lg hover:bg-background/80 transition-colors'
+									>
+										<div className='flex items-center justify-between'>
+											<div>
+												<h3 className='text-white font-medium'>Room Code: {room.roomCode}</h3>
+												<p className='text-white/60 text-sm'>
+													Created: {new Date(room.createdAt).toLocaleDateString()}
+												</p>
+											</div>
+											<Button
+												onClick={() => setRoomCode(room.roomCode)}
+												variant='outline'
+												className='border-white/20 text-white hover:bg-white/10'
+											>
+												Use This Code
+											</Button>
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<div className='text-center py-8'>
+								<p className='text-white/80'>No public rooms available</p>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
