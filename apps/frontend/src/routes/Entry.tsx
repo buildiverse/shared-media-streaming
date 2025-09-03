@@ -1,46 +1,92 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Navbar } from '@/components/ui/navbar';
+import { Pricing } from '@/components/ui/pricing';
+import { VideoShowcase } from '@/components/ui/video-showcase';
 import { Link } from 'react-router-dom';
 
 export function Entry() {
 	return (
-		<div className='min-h-screen bg-background flex items-center justify-center p-4'>
-			<div className='w-full max-w-md'>
-				<Card className='shadow-xl'>
-					<CardHeader className='text-center space-y-4'>
-						<div className='mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center'>
-							<span className='text-2xl font-bold text-white'>SMS</span>
-						</div>
-						<CardTitle className='text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'>
-							Shared Media Streaming
-						</CardTitle>
-						<CardDescription className='text-lg'>
-							Stream, share, and enjoy media together in real-time
-						</CardDescription>
-					</CardHeader>
-					<CardContent className='space-y-6'>
-						<div className='space-y-3'>
-							<Button
-								asChild
-								className='w-full'
-								size='lg'
-							>
-								<Link to='/login'>Sign In</Link>
-							</Button>
-							<Button
-								asChild
-								variant='outline'
-								className='w-full'
-								size='lg'
-							>
-								<Link to='/register'>Create Account</Link>
-							</Button>
-						</div>
-						<div className='text-center text-sm text-muted-foreground'>
-							<p>Join thousands of users sharing media experiences</p>
-						</div>
-					</CardContent>
-				</Card>
+		<div className='min-h-screen bg-background relative overflow-hidden'>
+			{/* Animated Background Shapes */}
+			<div className='absolute inset-0 pointer-events-none'>
+				{/* Large Circle */}
+				<div
+					className='absolute w-[1152px] h-[1152px] bg-primary/20 rounded-full'
+					style={{
+						top: '10%',
+						left: '-10%',
+						animation: 'floatCircle 20s ease-in-out infinite',
+						filter: 'blur(60px)',
+					}}
+				></div>
+
+				{/* First Oval */}
+				<div
+					className='absolute w-[960px] h-[720px] bg-primary/15 rounded-full'
+					style={{
+						top: '60%',
+						right: '-5%',
+						animation: 'floatOval1 25s ease-in-out infinite',
+						filter: 'blur(45px)',
+					}}
+				></div>
+
+				{/* Second Oval */}
+				<div
+					className='absolute w-[864px] h-[576px] bg-primary/25 rounded-full'
+					style={{
+						bottom: '20%',
+						left: '20%',
+						animation: 'floatOval2 30s ease-in-out infinite',
+						filter: 'blur(45px)',
+					}}
+				></div>
+			</div>
+
+			{/* Navigation */}
+			<Navbar />
+
+			{/* Main Content */}
+			<div className='relative z-10 flex flex-col items-center justify-center min-h-[calc(70vh-80px)] px-6 text-center'>
+				{/* Headline */}
+				<div className='mb-8'>
+					<h1 className='text-4xl font-bold mb-3 tracking-tight'>
+						<span className='text-white'>Watch</span> <span className='text-primary'>Together</span>
+					</h1>
+					<p className='text-xl font-semibold text-white/90'>Experience More</p>
+				</div>
+
+				{/* Description */}
+				<p className='text-base text-white/80 max-w-xl mb-8 leading-relaxed'>
+					Join friends in synchronised viewing experiences. Share movies, shows, and videos in
+					real-time with seamless chat integration and crystal-clear quality.
+				</p>
+
+				{/* Single Primary CTA */}
+				<div className='mb-4'>
+					<Button
+						asChild
+						size='default'
+						className='px-6'
+					>
+						<Link to='/rooms'>Launch Room</Link>
+					</Button>
+				</div>
+			</div>
+
+			{/* Footer */}
+			<div className='relative z-10 text-center pb-6'>
+				<p className='text-white/60 text-sm'>Developed by Buildiverse</p>
+			</div>
+
+			{/* Video Showcase Section */}
+			<div className='relative z-20'>
+				<VideoShowcase />
+			</div>
+
+			{/* Pricing Section */}
+			<div className='relative z-20'>
+				<Pricing />
 			</div>
 		</div>
 	);

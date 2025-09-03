@@ -1,5 +1,6 @@
 // AppRoutes Component
 
+import { Button } from '@/components/ui/button';
 import React, { useState } from 'react';
 import {
 	Link,
@@ -15,10 +16,10 @@ import { RegisterPage } from '../../features/auth/pages/RegisterPage';
 import { MediaUpload } from '../../features/media/components/MediaUpload';
 import { useMedia } from '../../features/media/hooks/useMedia';
 import { useRooms } from '../../features/rooms/hooks/useRooms';
+import { Calculator } from '../../routes/Calculator';
 import { Entry } from '../../routes/Entry';
-import { Button } from '../../ui/atoms/Button';
+import { Error404 } from '../../routes/Error404';
 import { MediaGrid } from '../../ui/organisms/MediaGrid';
-import { HomePage } from '../../ui/pages/HomePage';
 import { RoomPage } from '../../ui/pages/RoomPage';
 import { DashboardLayout } from '../../ui/templates/DashboardLayout';
 
@@ -74,11 +75,6 @@ const AppRoutesContent: React.FC = () => {
 			{/* Public routes */}
 			<Route
 				path='/splash'
-				element={<HomePage user={user} />}
-			/>
-
-			<Route
-				path='/entry'
 				element={<Entry />}
 			/>
 
@@ -91,6 +87,16 @@ const AppRoutesContent: React.FC = () => {
 			<Route
 				path='/register'
 				element={<RegisterPage />}
+			/>
+
+			<Route
+				path='/calculator'
+				element={<Calculator />}
+			/>
+
+			<Route
+				path='/404'
+				element={<Error404 />}
 			/>
 
 			{/* Protected routes */}
@@ -178,7 +184,7 @@ const AppRoutesContent: React.FC = () => {
 				path='*'
 				element={
 					<Navigate
-						to='/entry'
+						to='/splash'
 						replace
 					/>
 				}
@@ -192,31 +198,56 @@ const HomeDashboard: React.FC = () => {
 	const { user } = useAuth();
 
 	return (
-		<div className='dashboard-page'>
-			<h1>Welcome Home, {user?.username}!</h1>
-			<p>Your media streaming dashboard</p>
+		<div className='flex flex-col items-center justify-center min-h-[calc(100vh-160px)] px-6 text-center'>
+			{/* Welcome Section */}
+			<div className='mb-8'>
+				<h1 className='text-4xl font-bold text-white mb-3'>
+					Welcome Home, <span className='text-primary'>{user?.username}</span>!
+				</h1>
+				<p className='text-lg text-white/80'>Your media streaming dashboard</p>
+			</div>
 
-			<div>
-				<h2>Quick Actions</h2>
-				<div>
-					<Link to='/upload'>
-						<Button>Upload Media</Button>
-					</Link>
-					<Link to='/media'>
-						<Button>View Media</Button>
-					</Link>
+			{/* Quick Actions */}
+			<div className='mb-8'>
+				<h2 className='text-2xl font-semibold text-white mb-4'>Quick Actions</h2>
+				<div className='flex flex-col sm:flex-row gap-4'>
+					<Button
+						asChild
+						size='default'
+						className='px-6'
+					>
+						<Link to='/upload'>Upload Media</Link>
+					</Button>
+					<Button
+						asChild
+						variant='outline'
+						size='default'
+						className='px-6 border-white text-white hover:bg-white hover:text-background'
+					>
+						<Link to='/media'>View Media</Link>
+					</Button>
 				</div>
 			</div>
 
+			{/* Room Management */}
 			<div>
-				<h2>Room Management</h2>
-				<div>
-					<Link to='/rooms'>
-						<Button>Manage Rooms</Button>
-					</Link>
-					<Link to='/join-room'>
-						<Button>Join Room</Button>
-					</Link>
+				<h2 className='text-2xl font-semibold text-white mb-4'>Room Management</h2>
+				<div className='flex flex-col sm:flex-row gap-4'>
+					<Button
+						asChild
+						size='default'
+						className='px-6'
+					>
+						<Link to='/rooms'>Manage Rooms</Link>
+					</Button>
+					<Button
+						asChild
+						variant='outline'
+						size='default'
+						className='px-6 border-white text-white hover:bg-white hover:text-background'
+					>
+						<Link to='/join-room'>Join Room</Link>
+					</Button>
 				</div>
 			</div>
 		</div>
@@ -406,11 +437,19 @@ const UploadPage: React.FC = () => {
 	};
 
 	return (
-		<div className='upload-page'>
-			<h1>Upload Media</h1>
-			<MediaUpload onUpload={handleUpload} />
-			{uploading && <p>Uploading...</p>}
-			{error && <p style={{ color: 'red' }}>Error: {error}</p>}
+		<div className='flex flex-col items-center justify-center min-h-[calc(100vh-160px)] px-6'>
+			<div className='w-full max-w-md'>
+				<div className='text-center mb-8'>
+					<h1 className='text-3xl font-bold text-white mb-2'>Upload Media</h1>
+					<p className='text-base text-white/80'>
+						Share your audio and video files with the community
+					</p>
+				</div>
+
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-6'>
+					<MediaUpload onUpload={handleUpload} />
+				</div>
+			</div>
 		</div>
 	);
 };
