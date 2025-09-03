@@ -1,7 +1,13 @@
+import { BillingSlider } from '@/components/ui/billing-slider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings } from 'react-feather';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { usePricing } from '../../contexts/PricingContext';
+import { useStorage } from '../../hooks/useStorage';
+import { useStorageUpgrade } from '../../use-cases/storageUpgrade';
+import { formatPrice } from '../../utils/locale';
 
 interface PricingTier {
 	name: string;
@@ -14,69 +20,26 @@ interface PricingTier {
 	buttonLink: string;
 }
 
-const pricingTiers: PricingTier[] = [
-	{
-		name: 'Free',
-		price: '$0',
-		storage: '5GB',
-		features: [
-			'Basic streaming quality',
-			'Up to 4 viewers per room',
-			'Standard chat features',
-			'Community support',
-		],
-		hasAds: true,
-		buttonText: 'Get Started',
-		buttonLink: '/register',
-	},
-	{
-		name: 'Pro',
-		price: '$9.99',
-		storage: '100GB',
-		features: [
-			'HD streaming quality',
-			'Up to 20 viewers per room',
-			'Advanced chat features',
-			'Priority support',
-			'Custom room themes',
-		],
-		buttonText: 'Choose Pro',
-		buttonLink: '/register',
-	},
-	{
-		name: 'Premium',
-		price: '$19.99',
-		storage: '500GB',
-		features: [
-			'4K streaming quality',
-			'Unlimited viewers',
-			'All chat features',
-			'24/7 premium support',
-			'Custom branding',
-			'Analytics dashboard',
-		],
-		highlighted: true,
-		buttonText: 'Choose Premium',
-		buttonLink: '/register',
-	},
-	{
-		name: 'Enterprise',
-		price: 'Custom',
-		storage: 'Unlimited',
-		features: [
-			'Custom streaming quality',
-			'Unlimited everything',
-			'Dedicated support',
-			'White-label solution',
-			'API access',
-			'Custom integrations',
-		],
-		buttonText: 'Contact Sales',
-		buttonLink: '/contact',
-	},
-];
-
 export const Pricing = () => {
+	const { currency, billingCycle, setBillingCycle } = usePricing();
+	const { pricingData, isLoading } = useStorage();
+	const { isAuthenticated } = useAuth();
+	const { upgradeStorage, isUpgrading } = useStorageUpgrade();
+
+	// Show loading state while pricing data is being fetched
+	if (isLoading || !pricingData || !pricingData.tiers || pricingData.tiers.length === 0) {
+		return (
+			<section className='py-16 px-6 bg-background/50'>
+				<div className='max-w-7xl mx-auto'>
+					<div className='text-center'>
+						<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4'></div>
+						<p className='text-muted-foreground'>Loading pricing information...</p>
+					</div>
+				</div>
+			</section>
+		);
+	}
+
 	return (
 		<section className='py-16 px-6 bg-background/50'>
 			<div className='max-w-7xl mx-auto'>
@@ -86,59 +49,104 @@ export const Pricing = () => {
 						Start free and scale as you grow. All plans include our core features with no hidden
 						fees.
 					</p>
+
+					{/* Billing Cycle Selector */}
+					<div className='flex justify-center mt-6'>
+						<div className='flex items-center gap-4'>
+							<label className='text-white text-sm font-medium'>Billing Cycle:</label>
+							<BillingSlider
+								value={billingCycle}
+								onChange={setBillingCycle}
+							/>
+						</div>
+					</div>
 				</div>
 
 				<div className='grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12'>
-					{pricingTiers.map((tier) => (
-						<Card
-							key={tier.name}
-							className={`bg-background/40 backdrop-blur-lg border-border/30 ${
-								tier.highlighted ? 'border-primary/50 ring-2 ring-primary/20' : ''
-							}`}
-						>
-							<CardHeader className='text-center pb-4'>
-								{tier.highlighted && (
-									<div className='bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full mb-2 inline-block'>
-										Most Popular
+					{pricingData.tiers.map((tier) => {
+						const pricing = tier.pricing[currency];
+						const price = billingCycle === 'monthly' ? pricing.monthly : pricing.yearly;
+						const isFree = price === 0;
+
+						return (
+							<Card
+								key={tier.id}
+								className={`bg-background/40 backdrop-blur-lg border-border/30 ${
+									tier.popular ? 'border-primary/50 ring-2 ring-primary/20' : ''
+								}`}
+							>
+								<CardHeader className='text-center pb-4'>
+									{tier.popular && (
+										<div className='bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full mb-2 inline-block'>
+											Most Popular
+										</div>
+									)}
+									<CardTitle className='text-2xl font-bold text-white'>{tier.name}</CardTitle>
+									<div className='mt-4'>
+										<span className='text-4xl font-bold text-white'>
+											{isFree ? 'Free' : formatPrice(price, currency)}
+										</span>
+										{!isFree && (
+											<span className='text-white/60'>
+												/{billingCycle === 'monthly' ? 'month' : 'year'}
+											</span>
+										)}
 									</div>
-								)}
-								<CardTitle className='text-2xl font-bold text-white'>{tier.name}</CardTitle>
-								<div className='mt-4'>
-									<span className='text-4xl font-bold text-white'>{tier.price}</span>
-									{tier.price !== 'Custom' && <span className='text-white/60'>/month</span>}
-								</div>
-								<CardDescription className='text-primary font-medium'>
-									{tier.storage} Storage
-								</CardDescription>
-								{tier.hasAds && (
-									<div className='text-yellow-500 text-sm font-medium'>Includes Ads</div>
-								)}
-							</CardHeader>
-							<CardContent className='pt-0'>
-								<ul className='space-y-3 mb-6'>
-									{tier.features.map((feature, index) => (
-										<li
-											key={index}
-											className='flex items-start gap-2'
-										>
-											<span className='text-primary text-sm mt-1'>✓</span>
-											<span className='text-white/80 text-sm'>{feature}</span>
-										</li>
-									))}
-								</ul>
-								<Button
-									asChild
-									className={`w-full ${
-										tier.highlighted
-											? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-											: 'bg-background/60 hover:bg-background/80 text-white border border-border'
-									}`}
-								>
-									<Link to={tier.buttonLink}>{tier.buttonText}</Link>
-								</Button>
-							</CardContent>
-						</Card>
-					))}
+									<CardDescription className='text-primary font-medium'>
+										{tier.storageGB}GB Storage
+									</CardDescription>
+									{tier.name === 'Free' && (
+										<div className='text-yellow-500 text-sm font-medium'>Includes Ads</div>
+									)}
+								</CardHeader>
+								<CardContent className='pt-0'>
+									<ul className='space-y-3 mb-6'>
+										{tier.features.map((feature, index) => (
+											<li
+												key={index}
+												className='flex items-start gap-2'
+											>
+												<span className='text-primary text-sm mt-1'>✓</span>
+												<span className='text-white/80 text-sm'>{feature}</span>
+											</li>
+										))}
+									</ul>
+									<Button
+										onClick={() => {
+											console.log('Pricing button clicked:', {
+												tierId: tier.id,
+												currency,
+												billingCycle,
+												isFree,
+												isAuthenticated,
+											});
+											if (isFree) {
+												console.log('Free tier, redirecting to register');
+												// For free tier, just redirect to register
+												window.location.href = '/register';
+											} else {
+												console.log('Paid tier, calling upgradeStorage');
+												// For paid tiers, use the storage upgrade hook
+												upgradeStorage({
+													tierId: tier.id,
+													currency: currency,
+													billingCycle: billingCycle,
+												});
+											}
+										}}
+										disabled={isUpgrading}
+										className={`w-full ${
+											tier.popular
+												? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+												: 'bg-background/60 hover:bg-background/80 text-white border border-border'
+										}`}
+									>
+										{isUpgrading ? 'Processing...' : isFree ? 'Get Started' : `Choose ${tier.name}`}
+									</Button>
+								</CardContent>
+							</Card>
+						);
+					})}
 				</div>
 
 				{/* Storage Calculator Link */}

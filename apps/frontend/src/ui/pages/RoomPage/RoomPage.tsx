@@ -11,7 +11,7 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader, LogOut, MessageCircle, Play, Users, X } from 'react-feather';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../../../features/auth/hooks/useAuth';
+import { useAuth } from '../../../app/providers/AuthProvider';
 import { useMedia } from '../../../features/media/hooks/useMedia';
 import { useRoomSocket } from '../../../features/rooms/hooks/useRoomSocket';
 import { Media } from '../../../types';

@@ -10,7 +10,7 @@ import {
 	Routes,
 	useNavigate,
 } from 'react-router-dom';
-import { useAuth } from '../../features/auth/hooks/useAuth';
+import { StorageUsage } from '../../components/StorageUsage';
 import { LoginPage } from '../../features/auth/pages/LoginPage';
 import { RegisterPage } from '../../features/auth/pages/RegisterPage';
 import { MediaUpload } from '../../features/media/components/MediaUpload';
@@ -22,6 +22,7 @@ import { Error404 } from '../../routes/Error404';
 import { MediaGrid } from '../../ui/organisms/MediaGrid';
 import { RoomPage } from '../../ui/pages/RoomPage';
 import { DashboardLayout } from '../../ui/templates/DashboardLayout';
+import { useAuth } from '../providers/AuthProvider';
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -274,6 +275,14 @@ const MediaDashboard: React.FC = () => {
 				<p className='text-base text-white/80'>Manage and view your uploaded media files</p>
 			</div>
 
+			{/* Storage Usage */}
+			<div className='mb-8 max-w-2xl mx-auto'>
+				<StorageUsage
+					compact={true}
+					showUploadButton={true}
+				/>
+			</div>
+
 			{/* Media Grid */}
 			<div className='flex-1'>
 				<MediaGrid
@@ -483,7 +492,7 @@ const JoinRoom: React.FC = () => {
 
 // Upload Page Component
 const UploadPage: React.FC = () => {
-	const { uploadMedia, uploading, error } = useMedia();
+	const { uploadMedia } = useMedia();
 
 	const handleUpload = async (file: File, title: string, description?: string) => {
 		try {

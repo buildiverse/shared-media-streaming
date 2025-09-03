@@ -7,11 +7,13 @@ import { ApiService } from '@/services/api.service';
 import { validateEmail, validateRegisterForm, validateUsername } from '@/utils/validation';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../../app/providers/AuthProvider';
+import { useUserFlow } from '../../../use-cases/userFlow';
 
 export const RegisterPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { register, isLoading, error, clearError } = useAuth();
+	const { completeIntendedAction } = useUserFlow();
 	const toast = useToast();
 	const [formData, setFormData] = useState({
 		username: '',
@@ -233,7 +235,9 @@ export const RegisterPage: React.FC = () => {
 			const { confirmPassword, ...credentials } = formData;
 			await register(credentials);
 			toast.registerSuccess(formData.username);
-			navigate('/');
+
+			// Complete any intended action after successful registration
+			completeIntendedAction();
 		} catch (error) {
 			console.error('Registration failed:', error);
 			toast.registerError(error instanceof Error ? error.message : 'An unexpected error occurred');

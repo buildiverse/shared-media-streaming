@@ -1,6 +1,7 @@
 // useMedia Hook
 
 import { useState } from 'react';
+import { useToast } from '../../../providers/ToastProvider';
 import { ApiService } from '../../../services/api';
 import { Media } from '../../../types';
 
@@ -9,6 +10,7 @@ export const useMedia = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const toast = useToast();
 
 	const apiService = new ApiService();
 
@@ -64,23 +66,46 @@ export const useMedia = () => {
 			// Add new media to the list
 			setMedia((prev) => [response, ...prev]);
 
+			// Show success toast
+			toast.success('Media uploaded successfully!');
+
 			return response;
 		} catch (err: any) {
 			// Handle specific error cases
 			if (err.response?.status === 401) {
 				const errorMessage = 'Authentication expired. Please log in again.';
 				setError(errorMessage);
+				toast.error(errorMessage);
 				// Don't throw here - let the component handle the auth state
 				return null;
 			} else if (err.response?.status === 413) {
 				const errorMessage = 'File too large. Please choose a smaller file.';
 				setError(errorMessage);
+				toast.error(errorMessage);
 			} else if (err.response?.status === 429) {
 				const errorMessage = 'Too many requests. Please wait a moment and try again.';
 				setError(errorMessage);
+				toast.error(errorMessage);
+			} else if (
+				err.response?.status === 400 &&
+				err.response?.data?.message?.includes('Storage limit exceeded')
+			) {
+				// Handle storage limit exceeded error
+				const errorMessage = err.response.data.message;
+				setError(errorMessage);
+				toast.error(errorMessage, {
+					action: {
+						label: 'Upgrade Storage',
+						onClick: () => {
+							// Navigate to pricing page
+							window.location.href = '/calculator';
+						},
+					},
+				});
 			} else {
 				const errorMessage = err.response?.data?.message || 'Failed to upload media';
 				setError(errorMessage);
+				toast.error(errorMessage);
 			}
 
 			// Don't throw for upload errors - just return null

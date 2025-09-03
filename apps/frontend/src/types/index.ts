@@ -4,6 +4,7 @@ export interface User {
 	id: string;
 	username: string;
 	email: string;
+	maxUploadLimit: number; // in bytes
 	createdAt: string;
 	lastActiveAt: string;
 }

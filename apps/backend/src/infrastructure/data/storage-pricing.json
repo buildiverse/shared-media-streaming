@@ -1,0 +1,296 @@
+{
+	"tiers": [
+		{
+			"id": "free",
+			"name": "Free",
+			"storageGB": 5,
+			"features": [
+				"5GB storage",
+				"Basic video streaming",
+				"Community support",
+				"Ads included"
+			],
+			"pricing": {
+				"USD": {
+					"monthly": 0,
+					"yearly": 0,
+					"currency": "USD",
+					"symbol": "$"
+				},
+				"EUR": {
+					"monthly": 0,
+					"yearly": 0,
+					"currency": "EUR",
+					"symbol": "€"
+				},
+				"GBP": {
+					"monthly": 0,
+					"yearly": 0,
+					"currency": "GBP",
+					"symbol": "£"
+				},
+				"CAD": {
+					"monthly": 0,
+					"yearly": 0,
+					"currency": "CAD",
+					"symbol": "C$"
+				},
+				"AUD": {
+					"monthly": 0,
+					"yearly": 0,
+					"currency": "AUD",
+					"symbol": "A$"
+				}
+			},
+			"popular": false,
+			"stripeProductId": null,
+			"stripePriceId": {
+				"USD": {
+					"monthly": null,
+					"yearly": null
+				},
+				"EUR": {
+					"monthly": null,
+					"yearly": null
+				},
+				"GBP": {
+					"monthly": null,
+					"yearly": null
+				},
+				"CAD": {
+					"monthly": null,
+					"yearly": null
+				},
+				"AUD": {
+					"monthly": null,
+					"yearly": null
+				}
+			}
+		},
+		{
+			"id": "basic",
+			"name": "Basic",
+			"storageGB": 50,
+			"features": [
+				"50GB storage",
+				"HD video streaming",
+				"Priority support",
+				"No ads",
+				"Basic analytics"
+			],
+			"pricing": {
+				"USD": {
+					"monthly": 9.99,
+					"yearly": 99.99,
+					"currency": "USD",
+					"symbol": "$"
+				},
+				"EUR": {
+					"monthly": 8.99,
+					"yearly": 89.99,
+					"currency": "EUR",
+					"symbol": "€"
+				},
+				"GBP": {
+					"monthly": 7.99,
+					"yearly": 79.99,
+					"currency": "GBP",
+					"symbol": "£"
+				},
+				"CAD": {
+					"monthly": 12.99,
+					"yearly": 129.99,
+					"currency": "CAD",
+					"symbol": "C$"
+				},
+				"AUD": {
+					"monthly": 14.99,
+					"yearly": 149.99,
+					"currency": "AUD",
+					"symbol": "A$"
+				}
+			},
+			"popular": false,
+			"stripeProductId": "prod_SzLApxc6e6vvOX",
+			"stripePriceId": {
+				"USD": {
+					"monthly": "price_basic_usd_monthly",
+					"yearly": "price_basic_usd_yearly"
+				},
+				"EUR": {
+					"monthly": "price_1S3MTnEwpeGmgQxlxMcufY1J",
+					"yearly": "price_1S3MTnEwpeGmgQxlZHrW83Lk"
+				},
+				"GBP": {
+					"monthly": "price_1S3MToEwpeGmgQxlWX7QdElt",
+					"yearly": "price_1S3MToEwpeGmgQxl1oersUCQ"
+				},
+				"CAD": {
+					"monthly": "price_1S3MToEwpeGmgQxlgYKMG58l",
+					"yearly": "price_1S3MTpEwpeGmgQxlMicpcvVQ"
+				},
+				"AUD": {
+					"monthly": "price_1S3MTpEwpeGmgQxl532DlnxC",
+					"yearly": "price_1S3MTpEwpeGmgQxlLfT5Incq"
+				}
+			}
+		},
+		{
+			"id": "pro",
+			"name": "Pro",
+			"storageGB": 200,
+			"features": [
+				"200GB storage",
+				"4K video streaming",
+				"Priority support",
+				"No ads",
+				"Advanced analytics",
+				"Custom branding",
+				"API access"
+			],
+			"pricing": {
+				"USD": {
+					"monthly": 19.99,
+					"yearly": 199.99,
+					"currency": "USD",
+					"symbol": "$"
+				},
+				"EUR": {
+					"monthly": 17.99,
+					"yearly": 179.99,
+					"currency": "EUR",
+					"symbol": "€"
+				},
+				"GBP": {
+					"monthly": 15.99,
+					"yearly": 159.99,
+					"currency": "GBP",
+					"symbol": "£"
+				},
+				"CAD": {
+					"monthly": 25.99,
+					"yearly": 259.99,
+					"currency": "CAD",
+					"symbol": "C$"
+				},
+				"AUD": {
+					"monthly": 29.99,
+					"yearly": 299.99,
+					"currency": "AUD",
+					"symbol": "A$"
+				}
+			},
+			"popular": true,
+			"stripeProductId": "prod_SzLATuhwwZIIYJ",
+			"stripePriceId": {
+				"USD": {
+					"monthly": "price_pro_usd_monthly",
+					"yearly": "price_pro_usd_yearly"
+				},
+				"EUR": {
+					"monthly": "price_1S3MTqEwpeGmgQxlcXDRzrGF",
+					"yearly": "price_1S3MTqEwpeGmgQxlQbyqvkRE"
+				},
+				"GBP": {
+					"monthly": "price_1S3MTrEwpeGmgQxlgh6fGAXJ",
+					"yearly": "price_1S3MTrEwpeGmgQxlDzXOtoP5"
+				},
+				"CAD": {
+					"monthly": "price_1S3MTrEwpeGmgQxlj5aWhhJ6",
+					"yearly": "price_1S3MTsEwpeGmgQxlX65oQ0kb"
+				},
+				"AUD": {
+					"monthly": "price_1S3MTsEwpeGmgQxltHRxlFZu",
+					"yearly": "price_1S3MTsEwpeGmgQxlkQ1ZLidD"
+				}
+			}
+		},
+		{
+			"id": "enterprise",
+			"name": "Enterprise",
+			"storageGB": 1000,
+			"features": [
+				"1TB storage",
+				"4K video streaming",
+				"24/7 dedicated support",
+				"No ads",
+				"Advanced analytics",
+				"Custom branding",
+				"Full API access",
+				"White-label solution",
+				"Custom integrations"
+			],
+			"pricing": {
+				"USD": {
+					"monthly": 49.99,
+					"yearly": 499.99,
+					"currency": "USD",
+					"symbol": "$"
+				},
+				"EUR": {
+					"monthly": 44.99,
+					"yearly": 449.99,
+					"currency": "EUR",
+					"symbol": "€"
+				},
+				"GBP": {
+					"monthly": 39.99,
+					"yearly": 399.99,
+					"currency": "GBP",
+					"symbol": "£"
+				},
+				"CAD": {
+					"monthly": 64.99,
+					"yearly": 649.99,
+					"currency": "CAD",
+					"symbol": "C$"
+				},
+				"AUD": {
+					"monthly": 74.99,
+					"yearly": 749.99,
+					"currency": "AUD",
+					"symbol": "A$"
+				}
+			},
+			"popular": false,
+			"stripeProductId": "prod_SzLAiDRxy55qVd",
+			"stripePriceId": {
+				"USD": {
+					"monthly": "price_enterprise_usd_monthly",
+					"yearly": "price_enterprise_usd_yearly"
+				},
+				"EUR": {
+					"monthly": "price_1S3MTtEwpeGmgQxlYoPgfHCT",
+					"yearly": "price_1S3MTtEwpeGmgQxlnDjLu93R"
+				},
+				"GBP": {
+					"monthly": "price_1S3MTtEwpeGmgQxlZ7ua7Xma",
+					"yearly": "price_1S3MTuEwpeGmgQxlmXQApYBB"
+				},
+				"CAD": {
+					"monthly": "price_1S3MTuEwpeGmgQxlA8YsgdiP",
+					"yearly": "price_1S3MTuEwpeGmgQxlhp0xMHMz"
+				},
+				"AUD": {
+					"monthly": "price_1S3MTvEwpeGmgQxlTNRYyIyO",
+					"yearly": "price_1S3MTvEwpeGmgQxlpAgc3ZpD"
+				}
+			}
+		}
+	],
+	"currencyRates": {
+		"USD": 1,
+		"EUR": 0.85,
+		"GBP": 0.73,
+		"CAD": 1.35,
+		"AUD": 1.55
+	},
+	"supportedCurrencies": [
+		"USD",
+		"EUR",
+		"GBP",
+		"CAD",
+		"AUD"
+	],
+	"defaultCurrency": "USD"
+}

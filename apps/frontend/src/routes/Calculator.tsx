@@ -1,30 +1,68 @@
+import { BillingSlider } from '@/components/ui/billing-slider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Navbar } from '@/components/ui/navbar';
 import { Pricing } from '@/components/ui/pricing';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../app/providers/AuthProvider';
+import { StorageUsage } from '../components/StorageUsage';
+import { usePricing } from '../contexts/PricingContext';
+import { useStorage } from '../hooks/useStorage';
+import { useStorageUpgrade } from '../use-cases/storageUpgrade';
 
 export function Calculator() {
 	const [storage, setStorage] = useState(50);
-	const [pricePerGB] = useState(0.1); // $0.10 per GB per month
+	// Use pricing context for currency and billing cycle
+	const { currency, billingCycle, setBillingCycle } = usePricing();
+	// Get auth state for storage upgrade functionality
+	const { isAuthenticated } = useAuth();
+	// No auth required for calculator - users can see pricing before registering
+	const { stats, pricingData, isLoading, formatBytes, getRecommendedTier } = useStorage();
+	const { upgradeStorage, isUpgrading } = useStorageUpgrade(isAuthenticated);
 
-	const calculatePrice = (gb: number) => {
-		if (gb <= 5) return 0; // Free tier
-		if (gb <= 100) return 9.99; // Pro tier
-		if (gb <= 500) return 19.99; // Premium tier
-		return gb * pricePerGB; // Enterprise pricing
+	// Set initial storage based on user's current usage
+	useEffect(() => {
+		if (stats && !storage) {
+			const currentUsageGB = stats.currentUsage / (1024 * 1024 * 1024);
+			setStorage(Math.max(50, Math.ceil(currentUsageGB * 1.2))); // 20% buffer
+		}
+	}, [stats]);
+
+	// Get current tier based on storage amount
+	const getCurrentTier = () => {
+		if (!pricingData || !pricingData.tiers || pricingData.tiers.length === 0) {
+			return { name: 'Free', color: 'text-green-500', price: 0 };
+		}
+
+		const tier =
+			pricingData.tiers.find((t) => t.storageGB >= storage) ||
+			pricingData.tiers[pricingData.tiers.length - 1];
+		const pricing = tier.pricing[currency];
+		const price = billingCycle === 'monthly' ? pricing.monthly : pricing.yearly;
+
+		return {
+			name: tier.name,
+			color: tier.popular ? 'text-primary' : 'text-white',
+			price,
+			tier,
+		};
 	};
 
-	const getTier = (gb: number) => {
-		if (gb <= 5) return { name: 'Free', color: 'text-green-500' };
-		if (gb <= 100) return { name: 'Pro', color: 'text-blue-500' };
-		if (gb <= 500) return { name: 'Premium', color: 'text-primary' };
-		return { name: 'Enterprise', color: 'text-purple-500' };
-	};
+	const currentTier = getCurrentTier();
+	const recommendedTier = pricingData ? getRecommendedTier() : null;
 
-	const price = calculatePrice(storage);
-	const tier = getTier(storage);
+	// Show loading state while pricing data is being fetched
+	if (isLoading || !pricingData || !pricingData.tiers || pricingData.tiers.length === 0) {
+		return (
+			<div className='min-h-screen bg-background flex items-center justify-center'>
+				<div className='text-center'>
+					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4'></div>
+					<p className='text-muted-foreground'>Loading pricing information...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='min-h-screen bg-background relative overflow-hidden'>
@@ -72,6 +110,11 @@ export function Calculator() {
 					<p className='text-white/80 text-lg max-w-2xl mx-auto'>
 						Drag the slider to see how much storage you need and get an instant price quote
 					</p>
+
+					{/* Current Storage Usage - Only show if user is logged in */}
+					<div className='mt-8 max-w-md mx-auto'>
+						<StorageUsage showUpgradeButton={false} />
+					</div>
 				</div>
 
 				<Card className='bg-background/40 backdrop-blur-lg border-border/30'>
@@ -84,11 +127,24 @@ export function Calculator() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent className='space-y-8'>
+						{/* Billing Cycle Selector */}
+						<div className='flex justify-center'>
+							<div className='flex items-center gap-4'>
+								<label className='text-white text-sm font-medium'>Billing Cycle:</label>
+								<BillingSlider
+									value={billingCycle}
+									onChange={setBillingCycle}
+								/>
+							</div>
+						</div>
+
 						{/* Storage Slider */}
 						<div className='space-y-4'>
 							<div className='flex justify-between items-center'>
 								<label className='text-white font-medium'>Storage: {storage} GB</label>
-								<span className={`font-semibold ${tier.color}`}>{tier.name} Tier</span>
+								<span className={`font-semibold ${currentTier.color}`}>
+									{currentTier.name} Tier
+								</span>
 							</div>
 
 							<input
@@ -111,12 +167,17 @@ export function Calculator() {
 
 						{/* Price Display */}
 						<div className='text-center p-6 bg-background/60 rounded-lg border border-border/30'>
-							<div className='text-4xl font-bold text-white mb-2'>${price.toFixed(2)}</div>
-							<div className='text-white/70'>{price === 0 ? 'Free forever' : 'per month'}</div>
-							{tier.name === 'Enterprise' && (
-								<div className='text-primary text-sm mt-2'>
-									Custom pricing available for enterprise needs
-								</div>
+							<div className='text-4xl font-bold text-white mb-2'>
+								{currentTier.tier?.pricing[currency]?.symbol || '$'}
+								{currentTier.price.toFixed(2)}
+							</div>
+							<div className='text-white/70'>
+								{currentTier.price === 0
+									? 'Free forever'
+									: `per ${billingCycle === 'monthly' ? 'month' : 'year'}`}
+							</div>
+							{currentTier.tier?.popular && (
+								<div className='text-primary text-sm mt-2 font-medium'>Most Popular</div>
 							)}
 						</div>
 
@@ -138,12 +199,37 @@ export function Calculator() {
 
 						{/* Action Buttons */}
 						<div className='flex flex-col sm:flex-row gap-4 justify-center'>
-							<Button
-								asChild
-								className='bg-primary hover:bg-primary/90 text-primary-foreground'
-							>
-								<Link to='/register'>Get Started with {tier.name}</Link>
-							</Button>
+							{stats ? (
+								// User is logged in - show upgrade button
+								<Button
+									onClick={() =>
+										currentTier.tier &&
+										upgradeStorage({
+											tierId: currentTier.tier.id,
+											currency: currency,
+											billingCycle,
+										})
+									}
+									disabled={
+										isLoading || isUpgrading || !currentTier.tier || currentTier.price === 0
+									}
+									className='bg-primary hover:bg-primary/90 text-primary-foreground'
+								>
+									{isLoading || isUpgrading
+										? 'Processing...'
+										: currentTier.price === 0
+											? 'Current Plan'
+											: `Upgrade to ${currentTier.name}`}
+								</Button>
+							) : (
+								// User is not logged in - show register button
+								<Button
+									asChild
+									className='bg-primary hover:bg-primary/90 text-primary-foreground'
+								>
+									<Link to='/register'>Get Started with {currentTier.name}</Link>
+								</Button>
+							)}
 							<Button
 								asChild
 								variant='outline'

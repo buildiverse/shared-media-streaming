@@ -2,9 +2,15 @@ import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/ui/navbar';
 import { Pricing } from '@/components/ui/pricing';
 import { VideoShowcase } from '@/components/ui/video-showcase';
-import { Link } from 'react-router-dom';
+import { useRoomManagement } from '../use-cases/roomManagement';
 
 export function Entry() {
+	const { createRoom, isCreating } = useRoomManagement();
+
+	const handleLaunchRoom = () => {
+		createRoom();
+	};
+
 	return (
 		<div className='min-h-screen bg-background relative overflow-hidden'>
 			{/* Animated Background Shapes */}
@@ -65,11 +71,12 @@ export function Entry() {
 				{/* Single Primary CTA */}
 				<div className='mb-4'>
 					<Button
-						asChild
+						onClick={handleLaunchRoom}
+						disabled={isCreating}
 						size='default'
 						className='px-6'
 					>
-						<Link to='/rooms'>Launch Room</Link>
+						{isCreating ? 'Creating Room...' : 'Launch Room'}
 					</Button>
 				</div>
 			</div>
