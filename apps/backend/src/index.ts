@@ -24,7 +24,7 @@ import { createServer } from 'http';
 import app, { socketService } from './app';
 import { connectDB } from './infrastructure/config/db';
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT_2;
 
 async function startServer() {
 	try {
