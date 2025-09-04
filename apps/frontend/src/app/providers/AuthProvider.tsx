@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		dispatch({ type: 'AUTH_START' });
 
 		try {
-			const response = await apiService.post<{
+			await apiService.post<{
 				success: boolean;
 				user: {
 					id: string;

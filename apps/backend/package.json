@@ -6,8 +6,8 @@
 	"scripts": {
 		"dev": "NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
 		"dev:local": "NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
-		"build": "tsc -p tsconfig.json",
-		"build:prod": "NODE_ENV=production tsc -p tsconfig.json",
+		"build": "tsc -p tsconfig.json && cp -r src/infrastructure/data dist/infrastructure/",
+		"build:prod": "NODE_ENV=production tsc -p tsconfig.json && cp -r src/infrastructure/data dist/infrastructure/",
 		"start": "NODE_ENV=production node dist/index.js",
 		"start:dev": "NODE_ENV=development node dist/index.js",
 		"prod": "pnpm run build:prod && pnpm run start",

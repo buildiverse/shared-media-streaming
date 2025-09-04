@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/providers/ToastProvider';
 import React, { useRef, useState } from 'react';
 import { File, Upload, X } from 'react-feather';
 import { CONFIG } from '../../../config';
@@ -18,37 +17,21 @@ export interface MediaUploadProps {
 
 export interface UploadFormData {
 	title: string;
-	description: string;
 }
 
-export const MediaUpload: React.FC<MediaUploadProps> = ({
-	onUpload,
-	isLoading = false,
-	error,
-	className = '',
-}) => {
+export const MediaUpload: React.FC<MediaUploadProps> = ({ onUpload, isLoading = false, error }) => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const toast = useToast();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [formData, setFormData] = useState<UploadFormData>({
 		title: '',
-		description: '',
 	});
 	const [validationErrors, setValidationErrors] = useState<Partial<UploadFormData>>({});
 	const [uploadProgress, setUploadProgress] = useState(0);
 	const [isUploading, setIsUploading] = useState(false);
 
-	const uploadClasses = ['media-upload', className].filter(Boolean).join(' ');
-
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (file) {
-			// Validate file size
-			if (file.size > CONFIG.MEDIA.MAX_FILE_SIZE) {
-				alert(`File size must be less than ${formatFileSize(CONFIG.MEDIA.MAX_FILE_SIZE)}`);
-				return;
-			}
-
 			// Validate file type
 			if (!CONFIG.MEDIA.ALLOWED_MIME_TYPES.includes(file.type as any)) {
 				alert('File type not supported. Please select a valid audio or video file.');
@@ -109,29 +92,22 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
 		}, 200);
 
 		try {
-			await onUpload(
-				selectedFile!,
-				formData.title.trim(),
-				formData.description.trim() || undefined,
-			);
+			await onUpload(selectedFile!, formData.title.trim());
 
 			// Complete the progress bar
 			setUploadProgress(100);
 			clearInterval(progressInterval);
 
-			// Show success toast
-			toast.success(`"${formData.title}" uploaded successfully!`);
-
-			// Reset form after successful upload
+			// Reset form after successful upload (if we reach here, upload succeeded)
 			setSelectedFile(null);
-			setFormData({ title: '', description: '' });
+			setFormData({ title: '' });
 			if (fileInputRef.current) {
 				fileInputRef.current.value = '';
 			}
 		} catch (err) {
 			clearInterval(progressInterval);
 			setUploadProgress(0);
-			toast.error('Upload failed. Please try again.');
+			// Don't show error toast here - let useMedia hook handle it
 		} finally {
 			setIsUploading(false);
 		}
@@ -219,9 +195,7 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
 							<div className='text-white/80'>
 								<p className='font-medium'>Click to select a file or drag and drop</p>
 								<p className='text-sm text-white/60'>Supported: MP4, WebM, OGG, MP3, WAV</p>
-								<p className='text-sm text-white/60'>
-									Max size: {formatFileSize(CONFIG.MEDIA.MAX_FILE_SIZE)}
-								</p>
+								<p className='text-sm text-white/60'>Size limited by your storage plan</p>
 							</div>
 						</div>
 					)}
@@ -246,24 +220,6 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
 					required
 				/>
 				{validationErrors.title && <p className='text-red-500 text-sm'>{validationErrors.title}</p>}
-			</div>
-
-			{/* Description Field */}
-			<div className='space-y-2'>
-				<Label
-					htmlFor='description'
-					className='text-white font-medium'
-				>
-					Description
-				</Label>
-				<Input
-					id='description'
-					type='text'
-					value={formData.description}
-					onChange={(e) => handleInputChange('description', e.target.value)}
-					placeholder='Enter media description (optional)'
-					className='bg-background/60 border-border/50 text-white placeholder:text-white/50'
-				/>
 			</div>
 
 			{/* Upload Progress or Submit Button */}

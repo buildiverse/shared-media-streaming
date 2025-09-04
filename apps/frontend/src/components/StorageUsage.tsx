@@ -50,12 +50,6 @@ export const StorageUsage: React.FC<StorageUsageProps> = ({
 	const isNearLimit = usagePercentage >= 80;
 	const isAtLimit = usagePercentage >= 95;
 
-	const getProgressColor = () => {
-		if (isAtLimit) return 'bg-red-500';
-		if (isNearLimit) return 'bg-yellow-500';
-		return 'bg-primary';
-	};
-
 	const getStatusText = () => {
 		if (isAtLimit) return 'Storage nearly full';
 		if (isNearLimit) return 'Storage getting full';

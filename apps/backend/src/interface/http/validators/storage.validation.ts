@@ -27,6 +27,13 @@ export const createCheckoutSessionSchema = z.object({
 	}),
 });
 
+// Confirm checkout schema (used when webhooks are not available locally)
+export const confirmCheckoutSchema = z.object({
+	body: z.object({
+		sessionId: z.string().min(1, 'Stripe session ID is required'),
+	}),
+});
+
 // Stripe webhook schema (no body validation as it's raw)
 export const stripeWebhookSchema = z.object({
 	body: z.any(), // Raw body for webhook signature verification
@@ -40,3 +47,4 @@ export type GetStorageStatsInput = z.infer<typeof getStorageStatsSchema>;
 export type GetPricingTiersInput = z.infer<typeof getPricingTiersSchema>;
 export type CreateCheckoutSessionInput = z.infer<typeof createCheckoutSessionSchema>['body'];
 export type StripeWebhookInput = z.infer<typeof stripeWebhookSchema>;
+export type ConfirmCheckoutInput = z.infer<typeof confirmCheckoutSchema>['body'];

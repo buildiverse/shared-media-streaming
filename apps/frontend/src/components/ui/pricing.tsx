@@ -9,17 +9,6 @@ import { useStorage } from '../../hooks/useStorage';
 import { useStorageUpgrade } from '../../use-cases/storageUpgrade';
 import { formatPrice } from '../../utils/locale';
 
-interface PricingTier {
-	name: string;
-	price: string;
-	storage: string;
-	features: string[];
-	highlighted?: boolean;
-	hasAds?: boolean;
-	buttonText: string;
-	buttonLink: string;
-}
-
 export const Pricing = () => {
 	const { currency, billingCycle, setBillingCycle } = usePricing();
 	const { pricingData, isLoading } = useStorage();

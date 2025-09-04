@@ -12,12 +12,7 @@ export interface DashboardLayoutProps {
 	className?: string;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
-	user,
-	onLogout,
-	children,
-	className = '',
-}) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 	return (
 		<div className='min-h-screen bg-background relative overflow-hidden'>
 			{/* Animated Background Shapes */}

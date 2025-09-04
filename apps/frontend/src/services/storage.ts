@@ -102,6 +102,20 @@ class StorageService {
 	}
 
 	/**
+	 * Confirm checkout session and apply storage upgrade
+	 */
+	async confirmCheckout(
+		sessionId: string,
+	): Promise<{ success: boolean; message: string; data: { upgraded: boolean } }> {
+		const response = await this.apiService.post<{
+			success: boolean;
+			message: string;
+			data: { upgraded: boolean };
+		}>('/api/v1/storage/confirm', { sessionId });
+		return response;
+	}
+
+	/**
 	 * Format bytes to human readable format
 	 */
 	formatBytes(bytes: number): string {

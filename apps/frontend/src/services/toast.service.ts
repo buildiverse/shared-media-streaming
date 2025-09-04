@@ -62,6 +62,24 @@ export class ToastService {
 	public loading(message: string, options?: ToastOptions): string {
 		return toast.loading(message, {
 			description: options?.description,
+		}) as string;
+	}
+
+	// Storage exceeded toast with action
+	public storageExceededWithCountdown(
+		message: string,
+		options?: ToastOptions & { durationMs?: number },
+	): void {
+		const duration = options?.durationMs ?? 6000;
+		toast.error('Storage limit exceeded', {
+			description: message,
+			duration,
+			action: options?.action
+				? {
+						label: options.action.label,
+						onClick: options.action.onClick,
+					}
+				: undefined,
 		});
 	}
 
@@ -74,7 +92,7 @@ export class ToastService {
 			error: string | ((error: any) => string);
 		},
 	): Promise<T> {
-		return toast.promise(promise, messages);
+		return toast.promise(promise, messages) as unknown as Promise<T>;
 	}
 
 	// Dismiss toast

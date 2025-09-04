@@ -5,7 +5,6 @@ import { Navbar } from '@/components/ui/navbar';
 import { Pricing } from '@/components/ui/pricing';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../app/providers/AuthProvider';
 import { StorageUsage } from '../components/StorageUsage';
 import { usePricing } from '../contexts/PricingContext';
 import { useStorage } from '../hooks/useStorage';
@@ -15,11 +14,9 @@ export function Calculator() {
 	const [storage, setStorage] = useState(50);
 	// Use pricing context for currency and billing cycle
 	const { currency, billingCycle, setBillingCycle } = usePricing();
-	// Get auth state for storage upgrade functionality
-	const { isAuthenticated } = useAuth();
 	// No auth required for calculator - users can see pricing before registering
-	const { stats, pricingData, isLoading, formatBytes, getRecommendedTier } = useStorage();
-	const { upgradeStorage, isUpgrading } = useStorageUpgrade(isAuthenticated);
+	const { stats, pricingData, isLoading } = useStorage();
+	const { upgradeStorage, isUpgrading } = useStorageUpgrade();
 
 	// Set initial storage based on user's current usage
 	useEffect(() => {
@@ -50,7 +47,6 @@ export function Calculator() {
 	};
 
 	const currentTier = getCurrentTier();
-	const recommendedTier = pricingData ? getRecommendedTier() : null;
 
 	// Show loading state while pricing data is being fetched
 	if (isLoading || !pricingData || !pricingData.tiers || pricingData.tiers.length === 0) {

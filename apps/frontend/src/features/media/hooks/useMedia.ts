@@ -49,7 +49,7 @@ export const useMedia = () => {
 	};
 
 	// Upload media
-	const uploadMedia = async (file: File, title: string, description?: string) => {
+	const uploadMedia = async (file: File, title: string) => {
 		setUploading(true);
 		setError(null);
 
@@ -57,9 +57,6 @@ export const useMedia = () => {
 			const formData = new FormData();
 			formData.append('media', file);
 			formData.append('title', title);
-			if (description) {
-				formData.append('description', description);
-			}
 
 			const response = await apiService.post<Media>('/api/v1/media/upload', formData);
 
@@ -79,9 +76,18 @@ export const useMedia = () => {
 				// Don't throw here - let the component handle the auth state
 				return null;
 			} else if (err.response?.status === 413) {
-				const errorMessage = 'File too large. Please choose a smaller file.';
+				// Treat 413 as storage capacity issue in our UX, prompt upgrade
+				const errorMessage = 'Upload exceeds plan storage limits.';
 				setError(errorMessage);
-				toast.error(errorMessage);
+				toast.storageExceededWithCountdown(errorMessage, {
+					action: {
+						label: 'View Plans',
+						onClick: () => {
+							window.location.href = '/calculator';
+						},
+					},
+					duration: 7000,
+				});
 			} else if (err.response?.status === 429) {
 				const errorMessage = 'Too many requests. Please wait a moment and try again.';
 				setError(errorMessage);
@@ -91,16 +97,16 @@ export const useMedia = () => {
 				err.response?.data?.message?.includes('Storage limit exceeded')
 			) {
 				// Handle storage limit exceeded error
-				const errorMessage = err.response.data.message;
+				const errorMessage = 'Upload exceeds plan storage limits.';
 				setError(errorMessage);
-				toast.error(errorMessage, {
+				toast.storageExceededWithCountdown(errorMessage, {
 					action: {
-						label: 'Upgrade Storage',
+						label: 'View Plans',
 						onClick: () => {
-							// Navigate to pricing page
 							window.location.href = '/calculator';
 						},
 					},
+					duration: 7000,
 				});
 			} else {
 				const errorMessage = err.response?.data?.message || 'Failed to upload media';

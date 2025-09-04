@@ -7,27 +7,40 @@ import {
 	StorageTier,
 } from '../../domain/services/istorage-pricing.service';
 
-export class StoragePricingService implements IStoragePricingService {
-	private pricingData: StoragePricingData | null = null;
+// Raw JSON data interface (what's actually in the JSON file)
+interface RawStorageTier {
+	id: string;
+	name: string;
+	description: string;
+	storage: string; // "100 GB", "2 TB", etc.
+	features: string[];
+	pricing: Record<string, { monthly: number; yearly: number }>;
+	popular?: boolean;
+	stripeProductId?: string | null;
+	stripePriceId?: Record<string, { monthly: string | null; yearly: string | null }> | null;
+}
 
+interface RawStoragePricingData {
+	tiers: RawStorageTier[];
+	supportedCurrencies: string[];
+	defaultCurrency: string;
+}
+
+export class StoragePricingService implements IStoragePricingService {
 	constructor(private readonly loggingService: ILoggingService) {}
 
-	private async loadPricingData(): Promise<StoragePricingData> {
-		if (this.pricingData) {
-			return this.pricingData;
-		}
-
+	private async loadPricingData(): Promise<RawStoragePricingData> {
 		try {
 			const pricingFilePath = path.join(__dirname, '../data/storage-pricing.json');
 			const fileContent = fs.readFileSync(pricingFilePath, 'utf-8');
-			this.pricingData = JSON.parse(fileContent) as StoragePricingData;
+			const rawData = JSON.parse(fileContent) as RawStoragePricingData;
 
 			this.loggingService.info('Storage pricing data loaded successfully', {
-				tierCount: this.pricingData.tiers.length,
-				supportedCurrencies: this.pricingData.supportedCurrencies,
+				tierCount: rawData.tiers.length,
+				supportedCurrencies: rawData.supportedCurrencies,
 			});
 
-			return this.pricingData;
+			return rawData;
 		} catch (error) {
 			this.loggingService.error('Failed to load storage pricing data', {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -50,12 +63,29 @@ export class StoragePricingService implements IStoragePricingService {
 				throw new Error(`Unsupported currency: ${targetCurrency}`);
 			}
 
+			// Transform all tiers to match the StorageTier interface
+			const transformedTiers: StorageTier[] = data.tiers.map((tier) => ({
+				id: tier.id,
+				name: tier.name,
+				storageGB: this.parseStorageToGB(tier.storage),
+				features: tier.features,
+				pricing: this.transformPricingData(tier.pricing),
+				popular: tier.popular || false,
+				stripeProductId: tier.stripeProductId || null,
+				stripePriceId: this.transformStripePriceData(tier.stripePriceId),
+			}));
+
 			this.loggingService.info('Retrieved pricing tiers', {
 				currency: targetCurrency,
-				tierCount: data.tiers.length,
+				tierCount: transformedTiers.length,
 			});
 
-			return data;
+			return {
+				tiers: transformedTiers,
+				supportedCurrencies: data.supportedCurrencies,
+				defaultCurrency: data.defaultCurrency,
+				currencyRates: this.getCurrencyRates(),
+			};
 		} catch (error) {
 			this.loggingService.error('Failed to get pricing tiers', {
 				currency,
@@ -85,13 +115,25 @@ export class StoragePricingService implements IStoragePricingService {
 				return null;
 			}
 
+			// Transform the tier data to match the StorageTier interface
+			const transformedTier: StorageTier = {
+				id: tier.id,
+				name: tier.name,
+				storageGB: this.parseStorageToGB(tier.storage),
+				features: tier.features,
+				pricing: this.transformPricingData(tier.pricing),
+				popular: tier.popular || false,
+				stripeProductId: tier.stripeProductId || null,
+				stripePriceId: this.transformStripePriceData(tier.stripePriceId),
+			};
+
 			this.loggingService.info('Retrieved storage tier', {
 				tierId,
 				currency: targetCurrency,
 				tierName: tier.name,
 			});
 
-			return tier;
+			return transformedTier;
 		} catch (error) {
 			this.loggingService.error('Failed to get storage tier', {
 				tierId,
@@ -179,5 +221,88 @@ export class StoragePricingService implements IStoragePricingService {
 			});
 			throw error;
 		}
+	}
+
+	private parseStorageToGB(storage: string): number {
+		// Parse storage string like "100 GB" or "2 TB" to GB
+		const match = storage.match(/^(\d+(?:\.\d+)?)\s*(GB|TB)$/i);
+		if (!match) {
+			throw new Error(`Invalid storage format: ${storage}`);
+		}
+
+		const value = parseFloat(match[1]);
+		const unit = match[2].toUpperCase();
+
+		if (unit === 'TB') {
+			return value * 1024; // Convert TB to GB
+		} else if (unit === 'GB') {
+			return value;
+		}
+
+		throw new Error(`Unsupported storage unit: ${unit}`);
+	}
+
+	private transformPricingData(
+		pricing: Record<string, { monthly: number; yearly: number }>,
+	): Record<string, { monthly: number; yearly: number; currency: string; symbol: string }> {
+		const transformed: Record<
+			string,
+			{ monthly: number; yearly: number; currency: string; symbol: string }
+		> = {};
+
+		for (const [currency, data] of Object.entries(pricing)) {
+			transformed[currency] = {
+				monthly: data.monthly,
+				yearly: data.yearly,
+				currency,
+				symbol: this.getCurrencySymbol(currency),
+			};
+		}
+
+		return transformed;
+	}
+
+	private transformStripePriceData(
+		stripePriceId:
+			| Record<string, { monthly: string | null; yearly: string | null }>
+			| null
+			| undefined,
+	): Record<string, { monthly: string | null; yearly: string | null }> {
+		if (!stripePriceId) {
+			return {};
+		}
+
+		const transformed: Record<string, { monthly: string | null; yearly: string | null }> = {};
+
+		for (const [currency, data] of Object.entries(stripePriceId)) {
+			transformed[currency] = {
+				monthly: data.monthly || null,
+				yearly: data.yearly || null,
+			};
+		}
+
+		return transformed;
+	}
+
+	private getCurrencySymbol(currency: string): string {
+		const symbols: Record<string, string> = {
+			USD: '$',
+			EUR: '€',
+			GBP: '£',
+			CAD: 'C$',
+			AUD: 'A$',
+		};
+		return symbols[currency] || currency;
+	}
+
+	private getCurrencyRates(): Record<string, number> {
+		// Simple currency rates (in a real app, these would come from an API)
+		return {
+			USD: 1.0,
+			EUR: 0.85,
+			GBP: 0.73,
+			CAD: 1.25,
+			AUD: 1.35,
+		};
 	}
 }

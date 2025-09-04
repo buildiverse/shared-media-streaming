@@ -25,7 +25,7 @@ export const useRoomManagement = () => {
 	 * Create a new room
 	 * @param options - Room creation options
 	 */
-	const createRoom = async (options: RoomCreationOptions = {}) => {
+	const createRoom = async () => {
 		if (!isAuthenticated) {
 			handleCreateRoom();
 			return;

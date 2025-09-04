@@ -5,12 +5,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/providers/ToastProvider';
 import { validateLoginForm } from '@/utils/validation';
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { useUserFlow } from '../../../use-cases/userFlow';
 
 export const LoginPage: React.FC = () => {
-	const navigate = useNavigate();
 	const { login, isLoading, error, clearError } = useAuth();
 	const { completeIntendedAction } = useUserFlow();
 	const toast = useToast();

@@ -18,17 +18,14 @@ export const useUserFlow = () => {
 	 * @param credentials - Registration credentials
 	 * @param options - Flow options
 	 */
-	const handleRegister = async (
-		credentials: { username: string; email: string; password: string },
-		options: UserFlowOptions = {},
-	) => {
+	const handleRegister = async (_options: UserFlowOptions = {}) => {
 		try {
 			// This would typically call the auth service
 			// For now, we'll just navigate to the appropriate page
-			const redirectPath = options.redirectAfterAuth || '/dashboard';
+			const redirectPath = _options.redirectAfterAuth || '/dashboard';
 
-			if (options.showToast && options.toastMessage) {
-				toast.success(options.toastMessage);
+			if (_options.showToast && _options.toastMessage) {
+				toast.success(_options.toastMessage);
 			}
 
 			// Navigate to the intended destination
@@ -44,17 +41,14 @@ export const useUserFlow = () => {
 	 * @param credentials - Login credentials
 	 * @param options - Flow options
 	 */
-	const handleLogin = async (
-		credentials: { username: string; password: string },
-		options: UserFlowOptions = {},
-	) => {
+	const handleLogin = async (_options: UserFlowOptions = {}) => {
 		try {
 			// This would typically call the auth service
 			// For now, we'll just navigate to the appropriate page
-			const redirectPath = options.redirectAfterAuth || '/dashboard';
+			const redirectPath = _options.redirectAfterAuth || '/dashboard';
 
-			if (options.showToast && options.toastMessage) {
-				toast.success(options.toastMessage);
+			if (_options.showToast && _options.toastMessage) {
+				toast.success(_options.toastMessage);
 			}
 
 			// Navigate to the intended destination

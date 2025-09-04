@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../app/providers/AuthProvider';
+import { usePricing } from '../contexts/PricingContext';
 import { useToast } from '../providers/ToastProvider';
 import { StoragePricingData, storageService, StorageStats, StorageTier } from '../services/storage';
 
@@ -10,6 +11,7 @@ export const useStorage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const toast = useToast();
 	const { isAuthenticated } = useAuth();
+	const { currency } = usePricing();
 
 	// Fetch storage statistics (only called when authenticated)
 	const fetchStorageStats = async () => {
@@ -95,8 +97,8 @@ export const useStorage = () => {
 
 	// Load initial data
 	useEffect(() => {
-		// Always fetch pricing data (public)
-		fetchPricingTiers();
+		// Always fetch pricing data (public) with detected currency
+		fetchPricingTiers(currency);
 
 		// Only fetch stats if user is authenticated
 		if (isAuthenticated) {
@@ -105,7 +107,7 @@ export const useStorage = () => {
 			// Clear stats if user is not authenticated
 			setStats(null);
 		}
-	}, [isAuthenticated]);
+	}, [isAuthenticated, currency]);
 
 	return {
 		stats,

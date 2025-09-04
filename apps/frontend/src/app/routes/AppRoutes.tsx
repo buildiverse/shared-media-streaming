@@ -100,6 +100,16 @@ const AppRoutesContent: React.FC = () => {
 				element={<Error404 />}
 			/>
 
+			{/* Storage upgrade success/cancel routes */}
+			<Route
+				path='/storage/upgrade/success'
+				element={<StorageUpgradeSuccess />}
+			/>
+			<Route
+				path='/storage/upgrade/cancel'
+				element={<StorageUpgradeCancel />}
+			/>
+
 			{/* Protected routes */}
 			<Route
 				path='/'
@@ -255,6 +265,166 @@ const HomeDashboard: React.FC = () => {
 	);
 };
 
+// Storage Upgrade Success Page
+const StorageUpgradeSuccess: React.FC = () => {
+	const { isAuthenticated } = useAuth();
+	const [sessionId, setSessionId] = React.useState<string | null>(null);
+	const [isConfirming, setIsConfirming] = React.useState(false);
+	const [confirmed, setConfirmed] = React.useState(false);
+	const [countdown, setCountdown] = React.useState(3);
+
+	React.useEffect(() => {
+		// Get session_id from URL params
+		const urlParams = new URLSearchParams(window.location.search);
+		const id = urlParams.get('session_id');
+		setSessionId(id);
+	}, []);
+
+	// Auto-confirm checkout when session_id is present
+	React.useEffect(() => {
+		if (sessionId && isAuthenticated && !isConfirming && !confirmed) {
+			const confirmCheckout = async () => {
+				setIsConfirming(true);
+				try {
+					const { storageService } = await import('../../services/storage');
+					const result = await storageService.confirmCheckout(sessionId);
+					if (result.success && result.data.upgraded) {
+						setConfirmed(true);
+						// Start countdown and redirect
+						const interval = setInterval(() => {
+							setCountdown((prev) => {
+								if (prev <= 1) {
+									clearInterval(interval);
+									window.location.href = '/media';
+									return 0;
+								}
+								return prev - 1;
+							});
+						}, 1000);
+					}
+				} catch (error) {
+					console.error('Failed to confirm checkout:', error);
+				} finally {
+					setIsConfirming(false);
+				}
+			};
+			confirmCheckout();
+		}
+	}, [sessionId, isAuthenticated, isConfirming, confirmed]);
+
+	if (!isAuthenticated) {
+		return (
+			<div className='flex flex-col items-center justify-center min-h-screen px-6 text-center'>
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-8 max-w-md'>
+					<h1 className='text-2xl font-bold text-white mb-4'>Please Log In</h1>
+					<p className='text-white/80 mb-6'>You need to be logged in to view this page.</p>
+					<Button asChild>
+						<Link to='/login'>Go to Login</Link>
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className='flex flex-col items-center justify-center min-h-screen px-6 text-center'>
+			<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-8 max-w-md'>
+				{isConfirming ? (
+					<>
+						<div className='text-blue-400 text-6xl mb-4'>⏳</div>
+						<h1 className='text-2xl font-bold text-white mb-4'>Confirming Payment...</h1>
+						<p className='text-white/80 mb-6'>
+							Please wait while we confirm your payment and upgrade your storage.
+						</p>
+					</>
+				) : confirmed ? (
+					<>
+						<div className='text-green-400 text-6xl mb-4'>✓</div>
+						<h1 className='text-2xl font-bold text-white mb-4'>Payment Successful!</h1>
+						<p className='text-white/80 mb-6'>
+							Your storage has been upgraded successfully. You can now upload more media files.
+						</p>
+						<p className='text-white/60 text-sm mb-6'>
+							Redirecting to media library in {countdown} seconds...
+						</p>
+					</>
+				) : (
+					<>
+						<div className='text-green-400 text-6xl mb-4'>✓</div>
+						<h1 className='text-2xl font-bold text-white mb-4'>Payment Successful!</h1>
+						<p className='text-white/80 mb-6'>
+							Your payment was processed. Storage upgrade is being applied...
+						</p>
+					</>
+				)}
+				{sessionId && (
+					<p className='text-white/60 text-sm mb-6'>
+						Session ID: {sessionId}
+						{!sessionId.startsWith('cs_test_') && !sessionId.startsWith('cs_live_') && (
+							<span className='text-yellow-400 ml-2'>⚠ Invalid session format</span>
+						)}
+					</p>
+				)}
+				<div className='flex flex-col sm:flex-row gap-3'>
+					<Button asChild>
+						<Link to='/media'>View Media Library</Link>
+					</Button>
+					<Button
+						asChild
+						variant='outline'
+						className='border-white/20 text-white hover:bg-white/10'
+					>
+						<Link to='/upload'>Upload Media</Link>
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+// Storage Upgrade Cancel Page
+const StorageUpgradeCancel: React.FC = () => {
+	const { isAuthenticated } = useAuth();
+
+	if (!isAuthenticated) {
+		return (
+			<div className='flex flex-col items-center justify-center min-h-screen px-6 text-center'>
+				<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-8 max-w-md'>
+					<h1 className='text-2xl font-bold text-white mb-4'>Please Log In</h1>
+					<p className='text-white/80 mb-6'>You need to be logged in to view this page.</p>
+					<Button asChild>
+						<Link to='/login'>Go to Login</Link>
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className='flex flex-col items-center justify-center min-h-screen px-6 text-center'>
+			<div className='bg-background/40 backdrop-blur-lg border-border/30 rounded-lg p-8 max-w-md'>
+				<div className='text-yellow-400 text-6xl mb-4'>⚠</div>
+				<h1 className='text-2xl font-bold text-white mb-4'>Payment Cancelled</h1>
+				<p className='text-white/80 mb-6'>
+					Your payment was cancelled. No charges have been made to your account.
+				</p>
+				<div className='flex flex-col sm:flex-row gap-3'>
+					<Button asChild>
+						<Link to='/calculator'>View Pricing Plans</Link>
+					</Button>
+					<Button
+						asChild
+						variant='outline'
+						className='border-white/20 text-white hover:bg-white/10'
+					>
+						<Link to='/media'>Back to Media Library</Link>
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+};
+
 // Media Dashboard Component
 const MediaDashboard: React.FC = () => {
 	const { user } = useAuth();
@@ -271,7 +441,7 @@ const MediaDashboard: React.FC = () => {
 		<div className='flex flex-col min-h-[calc(100vh-160px)] px-6 py-8'>
 			{/* Header */}
 			<div className='text-center mb-8'>
-				<h1 className='text-3xl font-bold text-white mb-2'>Media Library</h1>
+				<h1 className='text-3xl font-bold text white mb-2'>Media Library</h1>
 				<p className='text-base text-white/80'>Manage and view your uploaded media files</p>
 			</div>
 
@@ -494,9 +664,9 @@ const JoinRoom: React.FC = () => {
 const UploadPage: React.FC = () => {
 	const { uploadMedia } = useMedia();
 
-	const handleUpload = async (file: File, title: string, description?: string) => {
+	const handleUpload = async (file: File, title: string) => {
 		try {
-			const result = await uploadMedia(file, title, description);
+			const result = await uploadMedia(file, title);
 			if (result) {
 				console.log('Upload successful!');
 				// Could add success notification here

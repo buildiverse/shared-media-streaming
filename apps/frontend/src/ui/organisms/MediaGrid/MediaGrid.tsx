@@ -23,10 +23,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 	onEdit,
 	isLoading = false,
 	emptyMessage = 'No media found',
-	className = '',
 }) => {
-	const gridClasses = ['media-grid', className].filter(Boolean).join(' ');
-
 	if (isLoading) {
 		return (
 			<div className='flex flex-col items-center justify-center min-h-[400px]'>

@@ -23,7 +23,7 @@ export class ApiService {
 	// Check if username is available
 	static async checkUsernameAvailability(username: string): Promise<UsernameCheckResponse> {
 		try {
-			const response = await apiService.get(
+			const response = await apiService.get<UsernameCheckResponse>(
 				`/api/v1/users/check-username/${encodeURIComponent(username)}`,
 			);
 			return response;
@@ -36,7 +36,7 @@ export class ApiService {
 	// Check if email is available
 	static async checkEmailAvailability(email: string): Promise<EmailCheckResponse> {
 		try {
-			const response = await apiService.get(
+			const response = await apiService.get<EmailCheckResponse>(
 				`/api/v1/users/check-email/${encodeURIComponent(email)}`,
 			);
 			return response;
@@ -53,7 +53,7 @@ export class ApiService {
 		password: string;
 	}): Promise<ApiResponse> {
 		try {
-			const response = await apiService.post('/api/v1/users/signup', userData);
+			const response = await apiService.post<ApiResponse<any>>('/api/v1/users/signup', userData);
 			return response;
 		} catch (error: any) {
 			console.error('Error registering user:', error);
@@ -64,7 +64,7 @@ export class ApiService {
 	// Login user
 	static async login(credentials: { username: string; password: string }): Promise<ApiResponse> {
 		try {
-			const response = await apiService.post('/api/v1/auth/login', credentials);
+			const response = await apiService.post<ApiResponse<any>>('/api/v1/auth/login', credentials);
 			return response;
 		} catch (error: any) {
 			console.error('Error logging in:', error);

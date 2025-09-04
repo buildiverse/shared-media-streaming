@@ -14,6 +14,13 @@ export class StripeService implements IStripeService {
 		stripeSecretKey: string,
 		private readonly webhookSecret: string,
 	) {
+		// Debug: Log the key being used (masked for security)
+		const maskedKey = stripeSecretKey ? `${stripeSecretKey.substring(0, 7)}...` : 'undefined';
+		this.loggingService.info('Initializing Stripe service', {
+			keyPrefix: maskedKey,
+			isTestMode: stripeSecretKey?.startsWith('sk_test_'),
+		});
+
 		this.stripe = new Stripe(stripeSecretKey, {
 			apiVersion: '2025-08-27.basil',
 		});

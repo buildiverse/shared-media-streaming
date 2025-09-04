@@ -12,7 +12,9 @@ export interface IUserRepository {
 	}): Promise<User>;
 	update(
 		id: string,
-		updates: Partial<Pick<User, 'username' | 'email' | 'avatarUrl' | 'password'>>,
+		updates: Partial<
+			Pick<User, 'username' | 'email' | 'avatarUrl' | 'password' | 'maxUploadLimit'>
+		>,
 	): Promise<User | null>;
 	delete(id: string): Promise<boolean>;
 	checkUsernameExists(username: string): Promise<boolean>;

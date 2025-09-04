@@ -22,6 +22,7 @@ export const createStorageRoutes = (
 	router.use(authMiddleware(authService));
 	router.get('/stats', storageController.getUserStorageStats.bind(storageController));
 	router.post('/checkout', storageController.createCheckoutSession.bind(storageController));
+	router.post('/confirm', storageController.confirmCheckout.bind(storageController));
 
 	return router;
 };

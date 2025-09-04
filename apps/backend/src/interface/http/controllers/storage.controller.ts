@@ -5,6 +5,7 @@ import { IStoragePricingService } from '../../../domain/services/istorage-pricin
 import { IStorageService } from '../../../domain/services/istorage.service';
 import { IStripeService } from '../../../domain/services/istripe.service';
 import {
+	confirmCheckoutSchema,
 	createCheckoutSessionSchema,
 	getPricingTiersSchema,
 	getStorageStatsSchema,
@@ -140,8 +141,15 @@ export class StorageController {
 			}
 
 			// Create checkout session
-			const successUrl = `${req.protocol}://${req.get('host')}/storage/upgrade/success?session_id={CHECKOUT_SESSION_ID}`;
-			const cancelUrl = `${req.protocol}://${req.get('host')}/storage/upgrade/cancel`;
+			// Get frontend URL from environment or construct from request
+			const frontendUrl =
+				process.env.FRONTEND_URL ||
+				(req.get('origin')?.includes('localhost')
+					? 'http://localhost:4173'
+					: `${req.protocol}://${req.get('host')?.replace('3000', '4173')}`);
+
+			const successUrl = `${frontendUrl}/storage/upgrade/success?session_id={CHECKOUT_SESSION_ID}`;
+			const cancelUrl = `${frontendUrl}/storage/upgrade/cancel`;
 
 			const session = await this.stripeService.createCheckoutSession({
 				priceId: pricing.stripePriceId,
@@ -237,6 +245,74 @@ export class StorageController {
 			res.status(400).json({
 				success: false,
 				message: 'Webhook handling failed',
+			});
+		}
+	}
+
+	async confirmCheckout(req: Request, res: Response) {
+		try {
+			// Validate input
+			const validation = confirmCheckoutSchema.safeParse(req);
+			if (!validation.success) {
+				return res.status(400).json({
+					success: false,
+					message: 'Validation failed',
+					errors: validation.error.issues,
+				});
+			}
+
+			const userId = req.user?.userId;
+			if (!userId) {
+				return res.status(401).json({
+					success: false,
+					message: 'User not authenticated',
+				});
+			}
+
+			const { sessionId } = validation.data.body;
+
+			// Get session data from Stripe
+			const sessionData = await this.stripeService.handleSuccessfulPayment(sessionId);
+
+			// Verify the session belongs to the authenticated user
+			if (sessionData.userId !== userId) {
+				return res.status(403).json({
+					success: false,
+					message: 'Session does not belong to authenticated user',
+				});
+			}
+
+			// Update user's storage limit
+			const result = await this.increaseStorageUseCase.execute({
+				userId: sessionData.userId,
+				tierId: sessionData.metadata?.tierId || '',
+				currency: sessionData.metadata?.currency,
+				billingCycle: sessionData.metadata?.billingCycle as 'monthly' | 'yearly',
+			});
+
+			this.loggingService.info('Storage upgrade completed via confirm endpoint', {
+				userId: sessionData.userId,
+				sessionId,
+				success: result.success,
+			});
+
+			res.json({
+				success: true,
+				message: 'Storage upgrade confirmed successfully',
+				data: {
+					upgraded: result.success,
+				},
+			});
+		} catch (error) {
+			this.loggingService.error('Failed to confirm checkout', {
+				userId: req.user?.userId,
+				sessionId: req.body?.sessionId,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			});
+
+			res.status(500).json({
+				success: false,
+				message: 'Failed to confirm checkout',
 			});
 		}
 	}

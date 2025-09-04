@@ -7,9 +7,6 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 // Configure multer for memory storage (for S3 uploads)
 const upload = multer({
 	storage: multer.memoryStorage(),
-	limits: {
-		fileSize: 500 * 1024 * 1024, // 500MB limit
-	},
 	fileFilter: (_req, file, cb) => {
 		// Allow video, audio, and image files
 		if (
