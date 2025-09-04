@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useAuth } from '../../auth/hooks/useAuth';
+import { useAuth } from '../../../app/providers/AuthProvider';
 import { PublicRoom, RoomService } from '../services/room.service';
 
 export const useRooms = () => {

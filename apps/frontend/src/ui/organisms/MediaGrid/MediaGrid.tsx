@@ -1,6 +1,8 @@
 // MediaGrid Organism Component
 
+import { Card, CardContent } from '@/components/ui/card';
 import React from 'react';
+import { Loader } from 'react-feather';
 import { Media } from '../../../types';
 import { MediaCard } from '../../molecules/MediaCard';
 
@@ -21,41 +23,42 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 	onEdit,
 	isLoading = false,
 	emptyMessage = 'No media found',
-	className = '',
 }) => {
-	const gridClasses = ['media-grid', className].filter(Boolean).join(' ');
-
 	if (isLoading) {
 		return (
-			<div className={gridClasses}>
-				<div>
-					<p>Loading media...</p>
-				</div>
+			<div className='flex flex-col items-center justify-center min-h-[400px]'>
+				<Card className='bg-background/40 backdrop-blur-lg border-border/30 p-8'>
+					<CardContent className='flex flex-col items-center gap-4'>
+						<Loader className='w-8 h-8 text-primary animate-spin' />
+						<p className='text-white/80'>Loading media...</p>
+					</CardContent>
+				</Card>
 			</div>
 		);
 	}
 
 	if (media.length === 0) {
 		return (
-			<div className={gridClasses}>
-				<div>
-					<p>{emptyMessage}</p>
-				</div>
+			<div className='flex flex-col items-center justify-center min-h-[400px]'>
+				<Card className='bg-background/40 backdrop-blur-lg border-border/30 p-8'>
+					<CardContent className='text-center'>
+						<p className='text-white/80 text-lg'>{emptyMessage}</p>
+					</CardContent>
+				</Card>
 			</div>
 		);
 	}
 
 	return (
-		<div className={gridClasses}>
+		<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 			{media.map((item) => (
-				<div key={item.id}>
-					<MediaCard
-						media={item}
-						onPlay={onPlay}
-						onDelete={onDelete}
-						onEdit={onEdit}
-					/>
-				</div>
+				<MediaCard
+					key={item.id}
+					media={item}
+					onPlay={onPlay}
+					onDelete={onDelete}
+					onEdit={onEdit}
+				/>
 			))}
 		</div>
 	);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from '../../auth/hooks/useAuth';
+import { useAuth } from '../../../app/providers/AuthProvider';
+import { AuthService } from '../../auth/services/auth.service';
 
 export interface RoomUser {
 	id: string;
@@ -39,7 +40,8 @@ interface UseRoomSocketReturn {
 }
 
 export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
-	const { user, token, refreshToken } = useAuth();
+	const { user, token } = useAuth();
+	const authService = new AuthService();
 	const [isConnected, setIsConnected] = useState(false);
 	const [isJoined, setIsJoined] = useState(false);
 	const [users, setUsers] = useState<RoomUser[]>([]);
@@ -61,7 +63,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 			if (timeUntilExpiry < 2 * 60 * 1000) {
 				console.log('Token expiring soon, refreshing...');
 				try {
-					await refreshToken();
+					await authService.refreshToken();
 				} catch (error) {
 					console.error('Proactive token refresh failed:', error);
 					// If refresh fails, we'll handle it on the next connection attempt
@@ -70,7 +72,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 		} catch (error) {
 			console.error('Failed to check token expiration:', error);
 		}
-	}, [token, refreshToken]);
+	}, [token]);
 
 	// Set up token expiration check interval
 	useEffect(() => {
@@ -105,7 +107,8 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 		if (!currentToken) {
 			console.log('useRoomSocket connect: no token, attempting refresh...');
 			try {
-				currentToken = await refreshToken();
+				const refreshResponse = await authService.refreshToken();
+				currentToken = refreshResponse.accessToken;
 			} catch (error) {
 				console.error('useRoomSocket connect: token refresh failed:', error);
 				setError('Authentication failed - please login again');
@@ -122,7 +125,8 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				if (isExpired) {
 					console.log('useRoomSocket connect: token expired, refreshing...');
 					try {
-						currentToken = await refreshToken();
+						const refreshResponse = await authService.refreshToken();
+						currentToken = refreshResponse.accessToken;
 					} catch (error) {
 						console.error('useRoomSocket connect: token refresh failed:', error);
 						setError('Authentication failed - please login again');
@@ -187,7 +191,8 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 				) {
 					console.log('Auth error detected, attempting token refresh...');
 					try {
-						const newToken = await refreshToken();
+						const refreshResponse = await authService.refreshToken();
+						const newToken = refreshResponse.accessToken;
 						if (newToken) {
 							console.log('Token refreshed, reconnecting...');
 							// Disconnect current socket and reconnect with new token
@@ -310,7 +315,7 @@ export const useRoomSocket = (roomCode: string): UseRoomSocketReturn => {
 			console.error('Failed to connect to socket:', error);
 			setError('Failed to connect to room');
 		}
-	}, [token, roomCode, user?.id, refreshToken]);
+	}, [token, roomCode, user?.id]);
 
 	// Disconnect from socket
 	const disconnect = useCallback(() => {

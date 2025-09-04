@@ -7,6 +7,7 @@ import { DeleteMediaUseCase } from './application/use-cases/delete-media.usecase
 import { GetMediaByIdUseCase } from './application/use-cases/get-media-by-id.usecase';
 import { GetPublicRoomsUseCase } from './application/use-cases/get-public-rooms.usecase';
 import { GetUserMediaUseCase } from './application/use-cases/get-user-media.usecase';
+import { IncreaseStorageUseCase } from './application/use-cases/increase-storage.usecase';
 import { LoginUseCase } from './application/use-cases/login.usecase';
 import { LogoutUseCase } from './application/use-cases/logout.usecase';
 import { RefreshTokenUseCase } from './application/use-cases/refresh-token.usecase';
@@ -22,17 +23,22 @@ import { LoggingService } from './infrastructure/services/logging.service';
 import { RoomStateService } from './infrastructure/services/room-state.service';
 import { S3UploadService } from './infrastructure/services/s3-upload.service';
 import { SocketService } from './infrastructure/services/socket.service';
+import { StoragePricingService } from './infrastructure/services/storage-pricing.service';
+import { StorageService } from './infrastructure/services/storage.service';
+import { StripeService } from './infrastructure/services/stripe.service';
 import { ThumbnailService } from './infrastructure/services/thumbnail.service';
 
 import { AuthController } from './interface/http/controllers/auth.controller';
 import { MediaController } from './interface/http/controllers/media.controller';
 import { RoomController } from './interface/http/controllers/room.controller';
+import { StorageController } from './interface/http/controllers/storage.controller';
 import { UserController } from './interface/http/controllers/user.controller';
 import { globalErrorHandler, requestIdMiddleware } from './interface/http/middlewares';
 import { helmetConfig, rateLimiterConfig } from './interface/http/middlewares/configurations';
 import { createAuthRoutes } from './interface/http/routes/auth.routes';
 import { createMediaRoutes } from './interface/http/routes/media.routes';
 import { createRoomRoutes } from './interface/http/routes/room.routes';
+import { createStorageRoutes } from './interface/http/routes/storage.routes';
 import { createUserRoutes } from './interface/http/routes/user.routes';
 
 const app = express();
@@ -62,6 +68,15 @@ const tokenRepository = new TokenRepository();
 const mediaRepository = new MediaRepository();
 const roomRepository = new RoomRepository();
 
+// 2.5. Initialize storage services (after repositories)
+const storageService = new StorageService(mediaRepository, userRepository, loggingService);
+const storagePricingService = new StoragePricingService(loggingService);
+const stripeService = new StripeService(
+	loggingService,
+	process.env.STRIPE_SECRET_KEY || '',
+	process.env.STRIPE_WEBHOOK_SECRET || '',
+);
+
 // 3. Initialize use cases
 const createUserUseCase = new CreateUserUseCase(userRepository, passwordService);
 const loginUseCase = new LoginUseCase(
@@ -78,11 +93,17 @@ const uploadMediaUseCase = new UploadMediaUseCase(
 	mediaRepository,
 	s3UploadService,
 	thumbnailService,
+	storageService,
 	loggingService,
 );
 const getUserMediaUseCase = new GetUserMediaUseCase(mediaRepository, loggingService);
 const getMediaByIdUseCase = new GetMediaByIdUseCase(mediaRepository, loggingService);
 const deleteMediaUseCase = new DeleteMediaUseCase(mediaRepository, s3UploadService, loggingService);
+const increaseStorageUseCase = new IncreaseStorageUseCase(
+	userRepository,
+	storagePricingService,
+	loggingService,
+);
 
 // 4. Initialize controllers with use cases
 const userController = new UserController(createUserUseCase, userRepository, loggingService);
@@ -98,6 +119,13 @@ const mediaController = new MediaController(
 	getUserMediaUseCase,
 	getMediaByIdUseCase,
 	deleteMediaUseCase,
+	loggingService,
+);
+const storageController = new StorageController(
+	storageService,
+	storagePricingService,
+	stripeService,
+	increaseStorageUseCase,
 	loggingService,
 );
 
@@ -118,6 +146,7 @@ app.use('/api/v1/users', createUserRoutes(userController, authService));
 app.use('/api/v1/auth', createAuthRoutes(authController, authService));
 app.use('/api/v1/rooms', createRoomRoutes(roomController, authService, loggingService));
 app.use('/api/v1/media', createMediaRoutes(mediaController, authService));
+app.use('/api/v1/storage', createStorageRoutes(storageController, authService));
 
 // 404 handler for undefined routes
 // Routes should be hidden in production

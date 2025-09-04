@@ -1,6 +1,6 @@
 // AuthProvider Context
 
-import React, { createContext, ReactNode, useContext, useEffect, useReducer } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useMemo, useReducer } from 'react';
 import { CONFIG } from '../../config';
 import apiService from '../../services/api';
 import { AuthState, LoginCredentials, RegisterCredentials, User } from '../../types';
@@ -69,6 +69,8 @@ interface AuthContextType extends AuthState {
 	register: (credentials: RegisterCredentials) => Promise<void>;
 	logout: () => void;
 	clearError: () => void;
+	token: string | null;
+	refreshToken: string | null;
 }
 
 // Create context
@@ -108,12 +110,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 		try {
 			const response = await apiService.post<{
-				user: User;
-				accessToken: string;
-				refreshToken: string;
-			}>('/api/auth/login', credentials);
+				success: boolean;
+				data: {
+					user: User;
+					accessToken: string;
+					refreshToken: string;
+				};
+			}>('/api/v1/auth/login', credentials);
 
-			const { user, accessToken, refreshToken } = response;
+			const { user, accessToken, refreshToken } = response.data;
 
 			// Store tokens and user data
 			setStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY, accessToken);
@@ -136,23 +141,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		dispatch({ type: 'AUTH_START' });
 
 		try {
-			const response = await apiService.post<{
-				user: User;
-				accessToken: string;
-				refreshToken: string;
-			}>('/api/auth/register', credentials);
+			await apiService.post<{
+				success: boolean;
+				user: {
+					id: string;
+					username: string;
+					email: string;
+					createdAt: string;
+				};
+			}>('/api/v1/users/signup', credentials);
 
-			const { user, accessToken, refreshToken } = response;
-
-			// Store tokens and user data
-			setStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY, accessToken);
-			setStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY, refreshToken);
-			setStorageItem(CONFIG.STORAGE.USER_KEY, JSON.stringify(user));
-
-			dispatch({
-				type: 'AUTH_SUCCESS',
-				payload: { user, token: accessToken, refreshToken },
-			});
+			// After successful registration, automatically log the user in
+			await login(credentials);
 		} catch (error: any) {
 			const errorMessage = error.response?.data?.message || 'Registration failed';
 			dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
@@ -175,12 +175,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		dispatch({ type: 'CLEAR_ERROR' });
 	};
 
+	// Get current token and refresh token from storage
+	const token = useMemo(() => {
+		return getStorageItem(CONFIG.STORAGE.AUTH_TOKEN_KEY);
+	}, [state.isAuthenticated]);
+
+	const refreshToken = useMemo(() => {
+		return getStorageItem(CONFIG.STORAGE.REFRESH_TOKEN_KEY);
+	}, [state.isAuthenticated]);
+
 	const value: AuthContextType = {
 		...state,
 		login,
 		register,
 		logout,
 		clearError,
+		token,
+		refreshToken,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -5,6 +5,7 @@ export interface IUserDocument extends Document {
 	email: string;
 	password: string;
 	avatarUrl?: string;
+	maxUploadLimit: number; // in bytes, default 10GB
 	createdAt: Date;
 	lastActiveAt: Date;
 	updatedAt: Date;
@@ -34,6 +35,12 @@ const userSchema = new Schema<IUserDocument>(
 		avatarUrl: {
 			type: String,
 			required: false,
+		},
+		maxUploadLimit: {
+			type: Number,
+			required: true,
+			default: 10 * 1024 * 1024 * 1024, // 10GB in bytes
+			min: 0,
 		},
 		lastActiveAt: {
 			type: Date,

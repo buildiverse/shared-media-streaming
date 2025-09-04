@@ -90,6 +90,14 @@ export class MediaController {
 				requestId: req.requestId,
 			});
 
+			// Handle storage limit exceeded error specifically
+			if (error instanceof Error && error.message.includes('Storage limit exceeded')) {
+				return res.status(400).json({
+					success: false,
+					message: error.message,
+				});
+			}
+
 			res.status(500).json({
 				success: false,
 				message: 'Media upload failed',

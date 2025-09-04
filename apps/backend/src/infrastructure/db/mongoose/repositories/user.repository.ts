@@ -13,6 +13,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
@@ -29,6 +30,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
@@ -45,6 +47,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
@@ -70,6 +73,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
@@ -78,7 +82,9 @@ export class UserRepository implements IUserRepository {
 
 	async update(
 		id: string,
-		updates: Partial<Pick<User, 'username' | 'email' | 'avatarUrl' | 'password'>>,
+		updates: Partial<
+			Pick<User, 'username' | 'email' | 'avatarUrl' | 'password' | 'maxUploadLimit'>
+		>,
 	): Promise<User | null> {
 		const user = await UserModel.findByIdAndUpdate(
 			id,
@@ -94,6 +100,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
@@ -130,6 +137,7 @@ export class UserRepository implements IUserRepository {
 			user.email,
 			user.password,
 			user.avatarUrl,
+			user.maxUploadLimit,
 			user.createdAt,
 			user.lastActiveAt,
 			user.updatedAt,
