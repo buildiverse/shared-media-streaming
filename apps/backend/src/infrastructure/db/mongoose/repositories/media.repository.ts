@@ -162,23 +162,40 @@ export class MediaRepository implements IMediaRepository {
 		audioCount: number;
 		imageCount: number;
 	}> {
-		const [totalFiles, totalSize, videoCount, audioCount, imageCount] = await Promise.all([
-			MediaModel.countDocuments({ uploadedBy: userId }).exec(),
-			MediaModel.aggregate([
-				{ $match: { uploadedBy: userId } },
-				{ $group: { _id: null, totalSize: { $sum: '$size' } } },
-			]).exec(),
-			MediaModel.countDocuments({ uploadedBy: userId, mimeType: { $regex: /^video\// } }).exec(),
-			MediaModel.countDocuments({ uploadedBy: userId, mimeType: { $regex: /^audio\// } }).exec(),
-			MediaModel.countDocuments({ uploadedBy: userId, mimeType: { $regex: /^image\// } }).exec(),
-		]);
+		const result = await MediaModel.aggregate([
+			{ $match: { uploadedBy: userId } },
+			{
+				$group: {
+					_id: null,
+					totalFiles: { $sum: 1 },
+					totalSize: { $sum: '$size' },
+					videoCount: {
+						$sum: { $cond: [{ $regexMatch: { input: '$mimeType', regex: /^video\// } }, 1, 0] }
+					},
+					audioCount: {
+						$sum: { $cond: [{ $regexMatch: { input: '$mimeType', regex: /^audio\// } }, 1, 0] }
+					},
+					imageCount: {
+						$sum: { $cond: [{ $regexMatch: { input: '$mimeType', regex: /^image\// } }, 1, 0] }
+					}
+				}
+			}
+		]).exec();
+
+		const stats = result[0] || {
+			totalFiles: 0,
+			totalSize: 0,
+			videoCount: 0,
+			audioCount: 0,
+			imageCount: 0
+		};
 
 		return {
-			totalFiles,
-			totalSize: totalSize[0]?.totalSize || 0,
-			videoCount,
-			audioCount,
-			imageCount,
+			totalFiles: stats.totalFiles,
+			totalSize: stats.totalSize,
+			videoCount: stats.videoCount,
+			audioCount: stats.audioCount,
+			imageCount: stats.imageCount,
 		};
 	}
 }
